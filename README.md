@@ -1,3 +1,8 @@
+```txt
+i have docker-compose.yml file that is setup with mimio storage in docker image, setup the license to read from @s3_storage/mimio.license , and all the uploaded files will be stored in s3_storage/upload folder setup this in docker compose file, use the @ponytail skill to implement this solutions
+
+```
+
 # Turborepo starter
 
 This Turborepo starter is maintained by the Turborepo core team.
