@@ -1,3 +1,4 @@
+import { serverEnv } from "@repo/env";
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
@@ -7,6 +8,6 @@ export default defineConfig({
   strict: true,
   verbose: true,
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: serverEnv.DATABASE_URL,
   },
 });

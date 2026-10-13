@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -13,8 +14,8 @@
     "typescript": "^7"
   },
   "dependencies": {
-    "@repo/schema": "workspace:*",
     "@t3-oss/env-core": "^0.13.11",
-    "@t3-oss/env-nextjs": "^0.13.11"
+    "@t3-oss/env-nextjs": "^0.13.11",
+    "zod": "^4.6.7"
   }
 }

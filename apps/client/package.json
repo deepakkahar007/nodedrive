@@ -10,6 +10,8 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@repo/auth": "workspace:*",
+    "@repo/env": "workspace:*",
     "@base-ui/react": "^1.9.0",
     "@tanstack/react-form": "^1.33.5",
     "@tanstack/react-form-nextjs": "^1.33.5",
