@@ -12,6 +12,14 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.user.id,
       to: r.account.userId,
     }),
+    members: r.many.member({
+      from: r.user.id,
+      to: r.member.userId,
+    }),
+    invitations: r.many.invitation({
+      from: r.user.id,
+      to: r.invitation.inviterId,
+    }),
   },
   session: {
     user: r.one.user({
@@ -22,6 +30,36 @@ export const relations = defineRelations(schema, (r) => ({
   account: {
     user: r.one.user({
       from: r.account.userId,
+      to: r.user.id,
+    }),
+  },
+  organization: {
+    members: r.many.member({
+      from: r.organization.id,
+      to: r.member.organizationId,
+    }),
+    invitations: r.many.invitation({
+      from: r.organization.id,
+      to: r.invitation.organizationId,
+    }),
+  },
+  member: {
+    organization: r.one.organization({
+      from: r.member.organizationId,
+      to: r.organization.id,
+    }),
+    user: r.one.user({
+      from: r.member.userId,
+      to: r.user.id,
+    }),
+  },
+  invitation: {
+    organization: r.one.organization({
+      from: r.invitation.organizationId,
+      to: r.organization.id,
+    }),
+    user: r.one.user({
+      from: r.invitation.inviterId,
       to: r.user.id,
     }),
   },

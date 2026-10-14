@@ -1,13 +1,17 @@
 import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
 // This package owns the .env. Consumers (server, drizzle-kit, better-auth CLI)
 // run from other directories where Bun/Node won't auto-load it, so load it here.
+// import.meta.dirname avoids `new URL(..., import.meta.url)`, which bundlers
+// (Turbopack) rewrite into a foreign-realm URL that fileURLToPath rejects.
+const here = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 for (const file of [".env.local", ".env"]) {
-  const path = fileURLToPath(new URL(`../${file}`, import.meta.url));
-  if (existsSync(path)) process.loadEnvFile(path);
+  const path = resolve(here, "..", file);
+  if (existsSync(/* turbopackIgnore: true */ path)) process.loadEnvFile(path);
 }
 
 export const serverEnv = createEnv({
@@ -19,6 +23,9 @@ export const serverEnv = createEnv({
     POSTGRES_NAME: z.string(),
     BETTER_AUTH_SECRET: z.string(),
     BETTER_AUTH_URL: z.string(),
+    CLIENT_URL: z.string(),
+    GOOGLE_CLIENT_ID: z.string(),
+    GOOGLE_CLIENT_SECRET: z.string(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

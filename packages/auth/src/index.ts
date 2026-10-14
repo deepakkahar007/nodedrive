@@ -1,2 +1,1 @@
-const auth = "auth";
-export default auth;
+export { auth } from "./auth";
