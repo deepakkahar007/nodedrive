@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { requireSession } from "@/lib/session";
 
 export default async function DashboardPage() {
-  const session = await getSession();
-  if (!session) redirect("/sign-in");
+  const session = await requireSession();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-6 py-16">

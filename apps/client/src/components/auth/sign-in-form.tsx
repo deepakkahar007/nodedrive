@@ -129,7 +129,7 @@ export function SignInForm() {
 
       <p className="text-sm text-muted-foreground">
         New to NodeDrive?{" "}
-        <Link href="/sign-up" className="text-foreground underline">
+        <Link href="/auth/sign-up" className="text-foreground underline">
           Create an account
         </Link>
       </p>

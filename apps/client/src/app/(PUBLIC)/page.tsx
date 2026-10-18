@@ -1,12 +1,4 @@
-import Link from "next/link";
-import { getSession } from "@/lib/session";
-import { buttonVariants } from "@/components/ui/button";
-import { SignOutButton } from "@/components/auth/sign-out-button";
-import { cn } from "@/lib/utils";
-
 export default async function Home() {
-  const session = await getSession();
-
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-8 px-6 text-center">
       <div className="space-y-2">
@@ -16,7 +8,7 @@ export default async function Home() {
         </p>
       </div>
 
-      {session ? (
+      {/* {session ? (
         <div className="flex flex-col items-center gap-4">
           <p className="text-sm text-muted-foreground">
             Signed in as {session.user.email}
@@ -40,7 +32,7 @@ export default async function Home() {
             Create account
           </Link>
         </div>
-      )}
+      )} */}
     </main>
   );
 }

@@ -9,17 +9,15 @@ export function SignOutButton() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
+  async function handleSignOut() {
+    setPending(true);
+    await authClient.signOut();
+    router.push("/auth/sign-in");
+    router.refresh();
+  }
+
   return (
-    <Button
-      variant="outline"
-      disabled={pending}
-      onClick={async () => {
-        setPending(true);
-        await authClient.signOut();
-        router.push("/sign-in");
-        router.refresh();
-      }}
-    >
+    <Button variant="outline" disabled={pending} onClick={handleSignOut}>
       Sign out
     </Button>
   );

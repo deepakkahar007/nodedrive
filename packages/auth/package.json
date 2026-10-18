@@ -5,7 +5,8 @@
   "private": true,
   "exports": {
     ".": "./src/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./cookies": "./src/cookies.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"

@@ -148,7 +148,7 @@ export function SignUpForm() {
 
       <p className="text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link href="/sign-in" className="text-foreground underline">
+        <Link href="/auth/sign-in" className="text-foreground underline">
           Sign in
         </Link>
       </p>
