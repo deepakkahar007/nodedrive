@@ -12,6 +12,7 @@
   "dependencies": {
     "@repo/auth": "workspace:*",
     "@repo/env": "workspace:*",
+    "@repo/storage": "workspace:*",
     "@base-ui/react": "^1.9.0",
     "@tanstack/react-form": "^1.33.5",
     "@tanstack/react-form-nextjs": "^1.33.5",
