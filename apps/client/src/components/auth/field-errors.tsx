@@ -7,5 +7,9 @@ export function FieldErrors({ errors }: { errors: unknown[] }) {
     )
     .filter(Boolean);
   if (messages.length === 0) return null;
-  return <p className="text-sm text-destructive">{messages.join(", ")}</p>;
+  return (
+    <p className="text-sm text-destructive" role="alert">
+      {messages.join(", ")}
+    </p>
+  );
 }

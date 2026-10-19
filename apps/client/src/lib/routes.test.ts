@@ -2,15 +2,7 @@ import { expect, test } from "bun:test";
 import { isPublicPath } from "./routes";
 
 test("public and auth routes are open", () => {
-  const open = [
-    "/",
-    "/about",
-    "/about/team",
-    "/license",
-    "/auth",
-    "/auth/sign-in",
-    "/auth/sign-up",
-  ];
+  const open = ["/", "/about", "/about/team", "/license", "/auth"];
   for (const path of open) expect(isPublicPath(path)).toBe(true);
 });
 

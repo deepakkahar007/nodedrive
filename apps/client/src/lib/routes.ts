@@ -16,3 +16,11 @@ function matches(pathname: string, routes: readonly string[]) {
 export function isPublicPath(pathname: string) {
   return matches(pathname, publicRoutes) || matches(pathname, authRoutes);
 }
+
+/**
+ * Absolute dashboard URL for post-auth redirects. The auth backend resolves
+ * relative callback URLs against its own origin (port 3001), not the client.
+ */
+export function dashboardUrl() {
+  return new URL("/dashboard", window.location.origin).toString();
+}

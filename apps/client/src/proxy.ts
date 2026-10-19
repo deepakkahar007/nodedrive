@@ -8,7 +8,7 @@ export function proxy(request: NextRequest) {
   // Optimistic guard: no session cookie at all means no access to protected
   // routes. The verified check runs in the route group layouts.
   if (!isPublicPath(pathname) && !getSessionCookie(request)) {
-    return NextResponse.redirect(new URL("/auth/sign-in", request.nextUrl));
+    return NextResponse.redirect(new URL("/auth", request.nextUrl));
   }
 
   return NextResponse.next();

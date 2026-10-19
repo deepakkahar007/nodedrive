@@ -10,10 +10,5 @@ export default async function AuthLayout({
     redirect("/dashboard");
   }
 
-  return (
-    <>
-      <h1>Auth Layout</h1>
-      {children}
-    </>
-  );
+  return children;
 }
