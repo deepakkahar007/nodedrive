@@ -2,7 +2,30 @@ import { defineRelations } from "drizzle-orm/relations";
 import * as schema from "./index";
 
 export const relations = defineRelations(schema, (r) => ({
-  FilesTable: {},
+  FilesTable: {
+    user: r.one.user({
+      from: r.FilesTable.user_id,
+      to: r.user.id,
+    }),
+    folder: r.one.FolderTable({
+      from: r.FilesTable.folder_id,
+      to: r.FolderTable.id,
+    }),
+    organization: r.one.organization({
+      from: r.FilesTable.organization_id,
+      to: r.organization.id,
+    }),
+  },
+  FolderTable: {
+    user: r.one.user({
+      from: r.FolderTable.user_id,
+      to: r.user.id,
+    }),
+    organization: r.one.organization({
+      from: r.FolderTable.organization_id,
+      to: r.organization.id,
+    }),
+  },
   user: {
     sessions: r.many.session({
       from: r.user.id,
@@ -19,6 +42,14 @@ export const relations = defineRelations(schema, (r) => ({
     invitations: r.many.invitation({
       from: r.user.id,
       to: r.invitation.inviterId,
+    }),
+    files: r.many.FilesTable({
+      from: r.user.id,
+      to: r.FilesTable.user_id,
+    }),
+    folders: r.many.FolderTable({
+      from: r.user.id,
+      to: r.FolderTable.user_id,
     }),
   },
   session: {
@@ -41,6 +72,14 @@ export const relations = defineRelations(schema, (r) => ({
     invitations: r.many.invitation({
       from: r.organization.id,
       to: r.invitation.organizationId,
+    }),
+    files: r.many.FilesTable({
+      from: r.organization.id,
+      to: r.FilesTable.organization_id,
+    }),
+    folders: r.many.FolderTable({
+      from: r.organization.id,
+      to: r.FolderTable.organization_id,
     }),
   },
   member: {

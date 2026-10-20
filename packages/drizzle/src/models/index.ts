@@ -9,8 +9,11 @@ import {
   invitation,
 } from "./AuthTable";
 
+import { FolderTable } from "./FolderTable";
+
 export {
   FilesTable,
+  FolderTable,
   user,
   session,
   account,
