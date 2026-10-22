@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "test": "bun test"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
@@ -13,6 +16,7 @@
     "typescript": "^7"
   },
   "dependencies": {
+    "@repo/env": "workspace:*",
     "@aws-sdk/client-s3": "^3.1152.0",
     "@aws-sdk/lib-storage": "^3.1152.0",
     "@aws-sdk/s3-request-presigner": "^3.1152.0"

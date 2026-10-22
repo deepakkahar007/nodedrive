@@ -2,8 +2,10 @@ import Fastify, { type FastifyServerOptions } from "fastify";
 import { randomUUID } from "node:crypto";
 import { getLoggerConfig } from "./config/logger";
 import corsPlugin from "./plugins/cors";
+import authGuard from "./plugins/authGuard";
 import authPlugin from "./plugins/auth";
 import healthRoutes from "./routes/healthRoute";
+import uploadRoute from "./routes/uploadRoute";
 
 export async function buildApp(options: FastifyServerOptions = {}) {
   const fastify = Fastify({
@@ -14,10 +16,12 @@ export async function buildApp(options: FastifyServerOptions = {}) {
 
   // Register Plugins
   await fastify.register(corsPlugin);
+  await fastify.register(authGuard);
   await fastify.register(authPlugin);
 
   // Register Routes
   await fastify.register(healthRoutes);
+  await fastify.register(uploadRoute);
 
   return fastify;
 }

@@ -1,6 +1,7 @@
 import fp from "fastify-plugin";
 import { auth } from "@repo/auth";
 import { serverEnv } from "@repo/env";
+import { toHeaders } from "../lib/headers";
 
 const SKIPPED_RESPONSE_HEADERS = new Set([
   "set-cookie",
@@ -14,12 +15,7 @@ export default fp(async (fastify) => {
     method: ["GET", "POST"],
     url: "/api/auth/*",
     handler: async (request, reply) => {
-      const headers = new Headers();
-      for (const [key, value] of Object.entries(request.headers)) {
-        if (Array.isArray(value))
-          for (const item of value) headers.append(key, item);
-        else if (value !== undefined) headers.set(key, value);
-      }
+      const headers = toHeaders(request.headers);
 
       const hasBody =
         request.method !== "GET" &&
