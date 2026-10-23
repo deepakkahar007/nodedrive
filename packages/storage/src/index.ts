@@ -1,4 +1,8 @@
-import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  GetObjectCommand,
+  HeadBucketCommand,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
 import { Upload, type BodyDataTypes } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { bucketName, s3Client } from "./client";
@@ -42,6 +46,11 @@ export type PresignedDownloadInput = {
   key: string;
   expiresIn?: number;
 };
+
+/** Startup check: throws if S3/MinIO is unreachable or the bucket is missing. */
+export async function checkStorageConnection(): Promise<void> {
+  await s3Client.send(new HeadBucketCommand({ Bucket: bucketName }));
+}
 
 function resolveExpiry(expiresIn?: number): number {
   const seconds = expiresIn ?? DEFAULT_EXPIRES_IN;

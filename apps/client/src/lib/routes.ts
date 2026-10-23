@@ -17,6 +17,13 @@ export function isPublicPath(pathname: string) {
   return matches(pathname, publicRoutes) || matches(pathname, authRoutes);
 }
 
+/** True when a dashboard nav item should be highlighted for the current path. */
+export function isDashboardPathActive(pathname: string, href: string) {
+  return href === "/dashboard"
+    ? pathname === href
+    : pathname === href || pathname.startsWith(`${href}/`);
+}
+
 /**
  * Absolute dashboard URL for post-auth redirects. The auth backend resolves
  * relative callback URLs against its own origin (port 3001), not the client.

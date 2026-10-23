@@ -1,3 +1,7 @@
+import { AppHeader } from "@/components/dashboard/app-header";
+import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { requireSession } from "@/lib/session";
 
 export default async function DashboardLayout({
@@ -5,12 +9,23 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireSession();
+  const session = await requireSession();
 
   return (
-    <>
-      <h1>Dashboard Layout</h1>
-      {children}
-    </>
+    <TooltipProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <AppHeader
+            user={{
+              name: session.user.name,
+              email: session.user.email,
+              image: session.user.image,
+            }}
+          />
+          <div className="flex-1 p-4 md:p-6">{children}</div>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }

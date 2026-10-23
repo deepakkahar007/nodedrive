@@ -1,4 +1,5 @@
 import { AuthTabs } from "@/components/auth/auth-tabs";
+import { BrandMark } from "@/components/brand-mark";
 import {
   Card,
   CardContent,
@@ -6,23 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-function BrandMark({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 120 120"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      aria-hidden="true"
-    >
-      <rect x="14" y="14" width="58" height="58" rx="12" />
-      <rect x="48" y="48" width="58" height="58" rx="12" />
-      <circle cx="90" cy="30" r="7" />
-    </svg>
-  );
-}
 
 export default function AuthPage() {
   return (
@@ -34,10 +18,10 @@ export default function AuthPage() {
         />
         <BrandMark className="relative size-52 self-end text-background/25" />
         <div className="relative max-w-md">
-          <p className="font-[family-name:var(--font-poppins)] text-sm font-semibold text-background/60">
+          <p className="font-(family-name:--font-poppins) text-sm font-semibold text-background/60">
             NodeDrive
           </p>
-          <p className="mt-4 font-[family-name:var(--font-poppins)] text-4xl leading-[1.1] font-medium tracking-tight">
+          <p className="mt-4 font-(family-name:--font-poppins) text-4xl leading-[1.1] font-medium tracking-tight">
             Store and share files from anywhere.
           </p>
         </div>
@@ -47,7 +31,7 @@ export default function AuthPage() {
         <div className="grid w-full max-w-sm gap-8">
           <div className="grid gap-2 lg:hidden">
             <BrandMark className="size-10 text-foreground" />
-            <p className="font-[family-name:var(--font-poppins)] text-sm font-semibold text-muted-foreground">
+            <p className="font-(family-name:--font-poppins) text-sm font-semibold text-muted-foreground">
               NodeDrive
             </p>
           </div>

@@ -6,3 +6,8 @@ import { relations } from "./models/relations";
 const client = postgres(serverEnv.DATABASE_URL);
 
 export const db = drizzle({ client, relations });
+
+/** Startup check: throws if Postgres is unreachable or credentials are wrong. */
+export async function checkDatabaseConnection(): Promise<void> {
+  await client`select 1`;
+}

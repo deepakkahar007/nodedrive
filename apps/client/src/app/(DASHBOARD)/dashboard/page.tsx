@@ -1,22 +1,12 @@
-import Link from "next/link";
-import { SignOutButton } from "@/components/auth/sign-out-button";
-import { requireSession } from "@/lib/session";
+import { House } from "lucide-react";
+import { SectionPlaceholder } from "@/components/dashboard/section-placeholder";
 
-export default async function DashboardPage() {
-  const session = await requireSession();
-
+export default function DashboardPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-6 py-16">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <SignOutButton />
-      </header>
-      <p className="text-muted-foreground">
-        Signed in as {session.user.email}.
-      </p>
-      <Link href="/" className="w-fit text-sm underline">
-        Back home
-      </Link>
-    </main>
+    <SectionPlaceholder
+      title="Home"
+      description="Recent files and suggestions will appear here."
+      icon={House}
+    />
   );
 }

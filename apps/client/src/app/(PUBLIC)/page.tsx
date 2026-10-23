@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
 export default async function Home() {
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-8 px-6 text-center">
@@ -6,6 +9,10 @@ export default async function Home() {
         <p className="text-muted-foreground">
           Store and share files from anywhere.
         </p>
+
+        <Button>
+          <Link href={"/auth"}>Sign IN</Link>
+        </Button>
       </div>
 
       {/* {session ? (

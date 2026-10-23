@@ -4,8 +4,9 @@ import { authClient } from "@repo/auth/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export function SignOutButton() {
+export function SignOutButton({ className }: { className?: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -17,7 +18,12 @@ export function SignOutButton() {
   }
 
   return (
-    <Button variant="outline" disabled={pending} onClick={handleSignOut}>
+    <Button
+      variant="outline"
+      className={cn(className)}
+      disabled={pending}
+      onClick={handleSignOut}
+    >
       Sign out
     </Button>
   );
