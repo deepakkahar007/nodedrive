@@ -2,8 +2,6 @@ import { eq } from "drizzle-orm";
 import { db } from "../index";
 import { member, organization } from "../models";
 
-export const uploadFileRow = async () => {};
-
 export type UserOrganization = {
   id: string;
   name: string;
@@ -12,7 +10,6 @@ export type UserOrganization = {
   access: "owned" | "shared";
 };
 
-/** Organizations the user belongs to, labelled by their membership role. */
 export async function listUserOrganizations(
   userId: string,
 ): Promise<UserOrganization[]> {

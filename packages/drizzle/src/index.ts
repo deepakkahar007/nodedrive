@@ -9,7 +9,7 @@ export const db = drizzle({ client, relations });
 
 export * from "./db/query";
 
-/** Startup check: throws if Postgres is unreachable or credentials are wrong. */
+// database health check
 export async function checkDatabaseConnection(): Promise<void> {
   await client`select 1`;
 }

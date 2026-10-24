@@ -10,8 +10,7 @@ export const auth = betterAuth({
   }),
   plugins: [
     organization({
-      // Requirement: invitations stay valid for 48 hours.
-      invitationExpiresIn: 60 * 60 * 48,
+      invitationExpiresIn: 60 * 60 * 48, // 48 hours
     }),
   ],
   trustedOrigins: [serverEnv.CLIENT_URL],
