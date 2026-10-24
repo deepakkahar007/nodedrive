@@ -8,7 +8,12 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
-  plugins: [organization()],
+  plugins: [
+    organization({
+      // Requirement: invitations stay valid for 48 hours.
+      invitationExpiresIn: 60 * 60 * 48,
+    }),
+  ],
   trustedOrigins: [serverEnv.CLIENT_URL],
   emailAndPassword: {
     enabled: true,

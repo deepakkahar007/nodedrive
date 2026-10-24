@@ -1,3 +1,5 @@
+import { auth } from "@repo/auth";
+import { headers } from "next/headers";
 import { AppHeader } from "@/components/dashboard/app-header";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -10,11 +12,14 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await requireSession();
+  const organizations = await auth.api.listOrganizations({
+    headers: await headers(),
+  });
 
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar organizations={organizations} />
         <SidebarInset>
           <AppHeader
             user={{

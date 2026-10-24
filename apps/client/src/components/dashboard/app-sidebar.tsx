@@ -5,9 +5,14 @@ import {
   SidebarContent,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+import type { OrganizationSummary } from "@/lib/organization";
 import { SidebarNav } from "./sidebar-nav";
 
-export function AppSidebar() {
+export function AppSidebar({
+  organizations,
+}: {
+  organizations: OrganizationSummary[];
+}) {
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader className="px-4 pt-5 pb-3">
@@ -22,7 +27,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent className="gap-2 py-2">
-        <SidebarNav />
+        <SidebarNav organizations={organizations} />
       </SidebarContent>
     </Sidebar>
   );

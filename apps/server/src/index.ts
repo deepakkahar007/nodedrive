@@ -7,6 +7,7 @@ import corsPlugin from "./plugins/cors";
 import authGuard from "./plugins/authGuard";
 import authPlugin from "./plugins/auth";
 import healthRoutes from "./routes/healthRoute";
+import organizationRoute from "./routes/organizationRoute";
 import uploadRoute from "./routes/uploadRoute";
 
 export async function buildApp(options: FastifyServerOptions = {}) {
@@ -23,6 +24,7 @@ export async function buildApp(options: FastifyServerOptions = {}) {
 
   // Register Routes
   await fastify.register(healthRoutes);
+  await fastify.register(organizationRoute);
   await fastify.register(uploadRoute);
 
   return fastify;

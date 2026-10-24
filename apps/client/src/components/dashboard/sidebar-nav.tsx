@@ -10,9 +10,15 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { dashboardNavGroups } from "@/lib/dashboard-nav";
+import type { OrganizationSummary } from "@/lib/organization";
 import { isDashboardPathActive } from "@/lib/routes";
+import { OrganizationNav } from "./organization-nav";
 
-export function SidebarNav() {
+export function SidebarNav({
+  organizations,
+}: {
+  organizations: OrganizationSummary[];
+}) {
   const pathname = usePathname();
 
   return (
@@ -44,6 +50,8 @@ export function SidebarNav() {
           </SidebarGroupContent>
         </SidebarGroup>
       ))}
+
+      <OrganizationNav organizations={organizations} />
     </nav>
   );
 }
