@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@repo/auth/client";
+import { signUpWithEmail } from "@repo/auth/client";
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -25,14 +25,14 @@ export function SignUpForm() {
     validators: { onSubmit: schema },
     onSubmit: async ({ value }) => {
       setError(null);
-      const { error: signUpError } = await authClient.signUp.email({
+      const { error: signUpError } = await signUpWithEmail({
         name: value.name,
         email: value.email,
         password: value.password,
         callbackURL: dashboardUrl(),
       });
       if (signUpError) {
-        setError(signUpError.message ?? "Could not create your account");
+        setError(signUpError);
         return;
       }
       router.push("/dashboard");

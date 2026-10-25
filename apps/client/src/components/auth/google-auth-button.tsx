@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@repo/auth/client";
+import { signInWithGoogle } from "@repo/auth/client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { dashboardUrl } from "@/lib/routes";
@@ -16,12 +16,11 @@ export function GoogleAuthButton({
   async function handleClick() {
     onError(null);
     setPending(true);
-    const { error } = await authClient.signIn.social({
-      provider: "google",
+    const { error } = await signInWithGoogle({
       callbackURL: dashboardUrl(),
     });
     if (error) {
-      onError(error.message ?? "Could not reach Google");
+      onError(error);
       setPending(false);
     }
   }

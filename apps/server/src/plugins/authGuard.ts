@@ -1,8 +1,6 @@
 import fp from "fastify-plugin";
-import { auth } from "@repo/auth";
+import { type AuthSession, getSession } from "@repo/auth";
 import { toHeaders } from "../lib/headers";
-
-type AuthSession = typeof auth.$Infer.Session;
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -29,7 +27,7 @@ export default fp(async (fastify) => {
       return;
     }
 
-    const authSession = await auth.api.getSession({
+    const authSession = await getSession({
       headers: toHeaders(request.headers),
     });
 

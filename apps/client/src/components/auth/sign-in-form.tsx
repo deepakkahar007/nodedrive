@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@repo/auth/client";
+import { signInWithEmail } from "@repo/auth/client";
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,13 +24,13 @@ export function SignInForm() {
     validators: { onSubmit: schema },
     onSubmit: async ({ value }) => {
       setError(null);
-      const { error: signInError } = await authClient.signIn.email({
+      const { error: signInError } = await signInWithEmail({
         email: value.email,
         password: value.password,
         callbackURL: dashboardUrl(),
       });
       if (signInError) {
-        setError(signInError.message ?? "Could not sign you in");
+        setError(signInError);
         return;
       }
       router.push("/dashboard");

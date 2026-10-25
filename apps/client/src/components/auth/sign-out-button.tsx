@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@repo/auth/client";
+import { signOut } from "@repo/auth/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ export function SignOutButton({ className }: { className?: string }) {
 
   async function handleSignOut() {
     setPending(true);
-    await authClient.signOut();
+    await signOut();
     router.push("/auth");
     router.refresh();
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@repo/auth/client";
+import { createOrganization } from "@repo/auth/client";
 import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -75,7 +75,7 @@ export function CreateOrganizationDialog({
     }
 
     setIsSubmitting(true);
-    const { data, error: createError } = await authClient.organization.create({
+    const { data, error: createError } = await createOrganization({
       name: parsed.data.name,
       slug: parsed.data.slug,
       logo,
@@ -83,7 +83,7 @@ export function CreateOrganizationDialog({
     setIsSubmitting(false);
 
     if (createError) {
-      setError(createError.message ?? "Could not create the organization");
+      setError(createError);
       return;
     }
 

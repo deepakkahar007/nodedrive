@@ -1,6 +1,12 @@
 "use client";
 
-import { authClient } from "@repo/auth/client";
+import {
+  acceptInvitation,
+  listUserInvitations,
+  rejectInvitation,
+  setActiveOrganization,
+  useSession,
+} from "@repo/auth/client";
 import { Inbox } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -36,19 +42,18 @@ export function InvitationsDialog() {
   const [invitations, setInvitations] = useState<PendingInvitation[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { data: session } = authClient.useSession();
+  const { data: session } = useSession();
   const emailVerified = Boolean(session?.user.emailVerified);
 
   const loadInvitations = useCallback(async () => {
-    const { data, error: loadError } =
-      await authClient.organization.listUserInvitations();
+    const { data, error: loadError } = await listUserInvitations();
 
     if (loadError) {
-      setError(loadError.message ?? "Could not load your invitations");
+      setError(loadError);
       return;
     }
 
-    setInvitations((data ?? []) as PendingInvitation[]);
+    setInvitations(data ?? []);
   }, []);
 
   useEffect(() => {
@@ -60,18 +65,17 @@ export function InvitationsDialog() {
     setBusyId(invitation.id);
     setError(null);
 
-    const { error: acceptError } =
-      await authClient.organization.acceptInvitation({
-        invitationId: invitation.id,
-      });
+    const { error: acceptError } = await acceptInvitation({
+      invitationId: invitation.id,
+    });
 
     if (acceptError) {
-      setError(acceptError.message ?? "Could not accept the invitation");
+      setError(acceptError);
       setBusyId(null);
       return;
     }
 
-    await authClient.organization.setActive({
+    await setActiveOrganization({
       organizationId: invitation.organizationId,
     });
 
@@ -85,13 +89,12 @@ export function InvitationsDialog() {
     setBusyId(invitation.id);
     setError(null);
 
-    const { error: declineError } =
-      await authClient.organization.rejectInvitation({
-        invitationId: invitation.id,
-      });
+    const { error: declineError } = await rejectInvitation({
+      invitationId: invitation.id,
+    });
 
     if (declineError) {
-      setError(declineError.message ?? "Could not decline the invitation");
+      setError(declineError);
       setBusyId(null);
       return;
     }

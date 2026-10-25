@@ -1,4 +1,4 @@
-import { getSessionCookie } from "@repo/auth/cookies";
+import { hasSessionCookie } from "@repo/auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 import { isPublicPath } from "@/lib/routes";
 
@@ -7,7 +7,7 @@ export function proxy(request: NextRequest) {
 
   // Optimistic guard: no session cookie at all means no access to protected
   // routes. The verified check runs in the route group layouts.
-  if (!isPublicPath(pathname) && !getSessionCookie(request)) {
+  if (!isPublicPath(pathname) && !hasSessionCookie(request)) {
     return NextResponse.redirect(new URL("/auth", request.nextUrl));
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@repo/auth/client";
+import { inviteMember } from "@repo/auth/client";
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
@@ -53,7 +53,7 @@ export function InviteMemberDialog({
     }
 
     setIsSubmitting(true);
-    const { error: inviteError } = await authClient.organization.inviteMember({
+    const { error: inviteError } = await inviteMember({
       email: parsed.data,
       role: "member",
       organizationId,
@@ -61,7 +61,7 @@ export function InviteMemberDialog({
     setIsSubmitting(false);
 
     if (inviteError) {
-      setError(inviteError.message ?? "Could not send the invitation");
+      setError(inviteError);
       return;
     }
 

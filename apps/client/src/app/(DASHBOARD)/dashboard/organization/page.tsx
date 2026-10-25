@@ -1,4 +1,4 @@
-import { auth } from "@repo/auth";
+import { listOrganizations } from "@repo/auth";
 import { Building2 } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
@@ -7,7 +7,7 @@ import { InvitationsDialog } from "@/components/organization/invitations-dialog"
 import { OrganizationLogo } from "@/components/organization/organization-logo";
 
 export default async function OrganizationPage() {
-  const organizations = await auth.api.listOrganizations({
+  const organizations = await listOrganizations({
     headers: await headers(),
   });
 

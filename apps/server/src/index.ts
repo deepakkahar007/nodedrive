@@ -41,7 +41,7 @@ function errorMessage(err: unknown): string {
   return String(err);
 }
 
-/** Fail fast if a backing service is down, so we never listen in a broken state. */
+// check postgres and minio connections
 async function checkServices(): Promise<void> {
   const checks = {
     postgres: checkDatabaseConnection,

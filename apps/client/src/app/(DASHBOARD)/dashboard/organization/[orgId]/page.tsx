@@ -1,4 +1,4 @@
-import { auth } from "@repo/auth";
+import { getFullOrganization } from "@repo/auth";
 import { FolderOpen } from "lucide-react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -20,12 +20,10 @@ export default async function OrganizationDetailPage({
 }) {
   const { orgId } = await params;
   const session = await requireSession();
-  const organization = await auth.api
-    .getFullOrganization({
-      query: { organizationId: orgId },
-      headers: await headers(),
-    })
-    .catch(() => null);
+  const organization = await getFullOrganization({
+    organizationId: orgId,
+    headers: await headers(),
+  });
 
   if (!organization) {
     notFound();

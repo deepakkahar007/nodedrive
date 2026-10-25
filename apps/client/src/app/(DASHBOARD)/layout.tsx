@@ -1,4 +1,4 @@
-import { auth } from "@repo/auth";
+import { listOrganizations } from "@repo/auth";
 import { headers } from "next/headers";
 import { AppHeader } from "@/components/dashboard/app-header";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
@@ -12,7 +12,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await requireSession();
-  const organizations = await auth.api.listOrganizations({
+  const organizations = await listOrganizations({
     headers: await headers(),
   });
 

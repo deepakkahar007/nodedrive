@@ -1,5 +1,5 @@
 import fp from "fastify-plugin";
-import { auth } from "@repo/auth";
+import { handleAuthRequest } from "@repo/auth";
 import { serverEnv } from "@repo/env";
 import { toHeaders } from "../lib/headers";
 
@@ -22,16 +22,12 @@ export default fp(async (fastify) => {
         request.method !== "HEAD" &&
         request.body !== undefined;
 
-      const response = await auth.handler(
-        new Request(
-          new URL(request.url, serverEnv.BETTER_AUTH_URL).toString(),
-          {
-            method: request.method,
-            headers,
-            body: hasBody ? JSON.stringify(request.body) : undefined,
-          },
-        ),
-      );
+      const response = await handleAuthRequest({
+        url: new URL(request.url, serverEnv.BETTER_AUTH_URL).toString(),
+        method: request.method,
+        headers,
+        body: hasBody ? JSON.stringify(request.body) : undefined,
+      });
 
       reply.status(response.status);
       response.headers.forEach((value, key) => {

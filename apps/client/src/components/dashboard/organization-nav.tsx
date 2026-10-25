@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@repo/auth/client";
+import { setActiveOrganization } from "@repo/auth/client";
 import { Building2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -56,7 +56,7 @@ export function OrganizationNav({
                 tooltip={organization.name}
                 className={itemClassName}
                 onClick={() => {
-                  void authClient.organization.setActive({
+                  void setActiveOrganization({
                     organizationId: organization.id,
                   });
                 }}
