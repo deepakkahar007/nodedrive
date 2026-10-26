@@ -1,7 +1,17 @@
 "use client";
 
 import { clientEnv } from "@repo/env/client";
-import { Building2, ChevronsUpDown, CloudUpload, File, X } from "lucide-react";
+import {
+  AlertCircle,
+  Building2,
+  CheckCircle2,
+  ChevronsUpDown,
+  CloudUpload,
+  File,
+  Loader2,
+  X,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -19,6 +29,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatBytes } from "@/lib/file-display";
+import {
+  completeUploads,
+  presignUploads,
+  uploadToStorage,
+} from "@/lib/uploads";
 import { cn } from "@/lib/utils";
 
 type UploadOrganization = {
@@ -29,6 +45,8 @@ type UploadOrganization = {
   access: "owned" | "shared";
 };
 
+type FileStatus = "uploading" | "done" | "error";
+
 const optionClassName =
   "flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-sm outline-none transition-colors hover:bg-muted focus-visible:bg-muted aria-pressed:bg-muted";
 
@@ -36,19 +54,8 @@ function fileKey(file: File) {
   return `${file.name}:${file.size}:${file.lastModified}`;
 }
 
-function formatBytes(bytes: number) {
-  if (bytes === 0) return "0 B";
-
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const exponent = Math.min(
-    Math.floor(Math.log(bytes) / Math.log(1024)),
-    units.length - 1,
-  );
-
-  return `${(bytes / 1024 ** exponent).toFixed(exponent === 0 ? 0 : 1)} ${units[exponent]}`;
-}
-
 export function UploadDialog() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -59,10 +66,19 @@ export function UploadDialog() {
   const [organizationsError, setOrganizationsError] = useState<string | null>(
     null,
   );
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [statuses, setStatuses] = useState<Record<string, FileStatus>>({});
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     multiple: true,
+    disabled: uploading,
     onDrop: (acceptedFiles) => {
+      setCompletedCount(0);
+      setError(null);
+      setStatuses({});
       setFiles((current) => {
         const seen = new Set(current.map(fileKey));
 
@@ -104,10 +120,20 @@ export function UploadDialog() {
     }
   }
 
+  function resetUploadState() {
+    setProgress(0);
+    setCompletedCount(0);
+    setError(null);
+    setStatuses({});
+  }
+
   function handleOpenChange(next: boolean) {
+    if (!next && uploading) return;
+
     setOpen(next);
 
     if (next) {
+      resetUploadState();
       void loadOrganizations();
       return;
     }
@@ -115,16 +141,113 @@ export function UploadDialog() {
     setFiles([]);
     setOrganizationId(null);
     setOrganizationOpen(false);
+    resetUploadState();
   }
 
   function removeFile(file: File) {
     setFiles((current) => current.filter((entry) => entry !== file));
   }
 
-  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    // ponytail: upload route not wired yet; organizationId is part of the payload
-    console.log("upload", { files, organizationId });
+
+    if (files.length === 0 || uploading) return;
+
+    setUploading(true);
+    resetUploadState();
+
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+    const uploaded: { file: File; key: string }[] = [];
+    const failed: File[] = [];
+    let settledBytes = 0;
+
+    try {
+      const presigned = await presignUploads(files, organizationId);
+
+      for (const [index, file] of files.entries()) {
+        const target = presigned[index];
+
+        if (!target) {
+          failed.push(file);
+          setStatuses((current) => ({
+            ...current,
+            [fileKey(file)]: "error",
+          }));
+          continue;
+        }
+
+        setStatuses((current) => ({
+          ...current,
+          [fileKey(file)]: "uploading",
+        }));
+
+        try {
+          await uploadToStorage(target.url, file, target.headers, (loaded) => {
+            const loadedBytes = settledBytes + Math.min(loaded, file.size);
+
+            setProgress(
+              totalBytes > 0
+                ? Math.round((loadedBytes / totalBytes) * 100)
+                : 100,
+            );
+          });
+
+          uploaded.push({ file, key: target.key });
+          setStatuses((current) => ({
+            ...current,
+            [fileKey(file)]: "done",
+          }));
+        } catch (uploadError) {
+          failed.push(file);
+          setStatuses((current) => ({
+            ...current,
+            [fileKey(file)]: "error",
+          }));
+          setError(
+            uploadError instanceof Error
+              ? uploadError.message
+              : `Could not upload ${file.name}`,
+          );
+        } finally {
+          settledBytes += file.size;
+          setProgress(
+            totalBytes > 0
+              ? Math.round((settledBytes / totalBytes) * 100)
+              : 100,
+          );
+        }
+      }
+
+      if (uploaded.length > 0) {
+        await completeUploads(
+          uploaded.map(({ file, key }) => ({
+            key,
+            name: file.name,
+            mimeType: file.type || "application/octet-stream",
+          })),
+          organizationId,
+        );
+        setCompletedCount(uploaded.length);
+        router.refresh();
+      }
+
+      if (failed.length > 0) {
+        showFailedFiles(failed, files.length);
+      } else {
+        setFiles([]);
+      }
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error ? submitError.message : "Upload failed",
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function showFailedFiles(failed: File[], total: number) {
+    setFiles(failed);
+    setError(`${failed.length} of ${total} files failed. Retry them below.`);
   }
 
   return (
@@ -147,9 +270,11 @@ export function UploadDialog() {
             {...getRootProps({
               role: "button",
               "aria-label": "Drop files here or click to select files",
+              "aria-disabled": uploading,
               className: cn(
                 "flex min-h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/30 px-6 py-8 text-center outline-none transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50",
                 isDragActive && "border-primary bg-primary/5",
+                uploading && "pointer-events-none opacity-60",
               ),
             })}
           >
@@ -171,42 +296,72 @@ export function UploadDialog() {
               aria-label="Selected files"
               className="max-h-48 space-y-2 overflow-y-auto"
             >
-              {files.map((file) => (
-                <li
-                  key={fileKey(file)}
-                  className="flex items-center gap-3 rounded-lg border p-2"
-                >
-                  <File
-                    aria-hidden="true"
-                    className="size-4 shrink-0 text-muted-foreground"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatBytes(file.size)}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={`Remove ${file.name}`}
-                    onClick={() => removeFile(file)}
+              {files.map((file) => {
+                const status = statuses[fileKey(file)];
+
+                return (
+                  <li
+                    key={fileKey(file)}
+                    className="flex items-center gap-3 rounded-lg border p-2"
                   >
-                    <X aria-hidden="true" />
-                  </Button>
-                </li>
-              ))}
+                    {status === "uploading" ? (
+                      <Loader2
+                        aria-hidden="true"
+                        className="size-4 shrink-0 animate-spin text-muted-foreground"
+                      />
+                    ) : status === "done" ? (
+                      <CheckCircle2
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-primary"
+                      />
+                    ) : status === "error" ? (
+                      <AlertCircle
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-destructive"
+                      />
+                    ) : (
+                      <File
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-muted-foreground"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">
+                        {file.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatBytes(file.size)}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={uploading}
+                      aria-label={`Remove ${file.name}`}
+                      onClick={() => removeFile(file)}
+                    >
+                      <X aria-hidden="true" />
+                    </Button>
+                  </li>
+                );
+              })}
             </ul>
           ) : null}
 
           <div className="grid gap-1.5">
             <span className="text-sm font-medium">Organization</span>
-            <Popover open={organizationOpen} onOpenChange={setOrganizationOpen}>
+            <Popover
+              open={organizationOpen}
+              onOpenChange={(next) => {
+                if (!uploading) setOrganizationOpen(next);
+              }}
+            >
               <PopoverTrigger
                 type="button"
                 aria-label="Organization"
-                className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                disabled={uploading}
+                className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span className="flex min-w-0 items-center gap-2">
                   <Building2
@@ -283,18 +438,83 @@ export function UploadDialog() {
             </p>
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
+          {uploading || progress > 0 ? (
+            <div className="grid gap-1.5">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span aria-live="polite">
+                  {uploading
+                    ? "Uploading files..."
+                    : `Uploaded ${completedCount} ${
+                        completedCount === 1 ? "file" : "files"
+                      }`}
+                </span>
+                <span className="tabular-nums">{progress}%</span>
+              </div>
+              <div
+                role="progressbar"
+                aria-label="Upload progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+                className="h-1.5 overflow-hidden rounded-full bg-muted"
+              >
+                <div
+                  className="h-full rounded-full bg-primary transition-[width] duration-150"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {completedCount > 0 && !uploading ? (
+            <output className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-foreground">
+              <CheckCircle2
+                aria-hidden="true"
+                className="size-4 shrink-0 text-primary"
+              />
+              Uploaded {completedCount}{" "}
+              {completedCount === 1 ? "file" : "files"}.
+            </output>
+          ) : null}
+
+          {error ? (
+            <p
+              role="alert"
+              className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
             >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={files.length === 0}>
-              Upload
-              {files.length > 1 ? ` ${files.length} files` : ""}
-            </Button>
+              <AlertCircle
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0"
+              />
+              {error}
+            </p>
+          ) : null}
+
+          <DialogFooter>
+            {completedCount > 0 && files.length === 0 && !uploading ? (
+              <Button type="button" onClick={() => handleOpenChange(false)}>
+                Done
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={uploading}
+                  onClick={() => handleOpenChange(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={files.length === 0 || uploading}
+                >
+                  {uploading
+                    ? `Uploading ${progress}%`
+                    : `Upload${files.length > 1 ? ` ${files.length} files` : ""}`}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

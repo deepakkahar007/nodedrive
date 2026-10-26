@@ -1,6 +1,7 @@
 import {
   GetObjectCommand,
   HeadBucketCommand,
+  HeadObjectCommand,
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { Upload, type BodyDataTypes } from "@aws-sdk/lib-storage";
@@ -45,7 +46,27 @@ export type PresignedUploadInput = {
 export type PresignedDownloadInput = {
   key: string;
   expiresIn?: number;
+  fileName?: string;
 };
+
+export type ObjectMetadata = {
+  size: number;
+  contentType?: string;
+  etag?: string;
+};
+
+/** Stored object details. Throws if the object does not exist. */
+export async function getObjectMetadata(key: string): Promise<ObjectMetadata> {
+  const result = await s3Client.send(
+    new HeadObjectCommand({ Bucket: bucketName, Key: key }),
+  );
+
+  return {
+    size: result.ContentLength ?? 0,
+    contentType: result.ContentType,
+    etag: result.ETag,
+  };
+}
 
 /** Startup check: throws if S3/MinIO is unreachable or the bucket is missing. */
 export async function checkStorageConnection(): Promise<void> {
@@ -126,7 +147,13 @@ export async function getPresignedDownloadUrl(
   const expiresIn = resolveExpiry(input.expiresIn);
   const url = await getSignedUrl(
     s3Client,
-    new GetObjectCommand({ Bucket: bucketName, Key: input.key }),
+    new GetObjectCommand({
+      Bucket: bucketName,
+      Key: input.key,
+      ResponseContentDisposition: input.fileName
+        ? `attachment; filename*=UTF-8''${encodeURIComponent(input.fileName).replace(/[!'()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)}`
+        : undefined,
+    }),
     { expiresIn },
   );
 

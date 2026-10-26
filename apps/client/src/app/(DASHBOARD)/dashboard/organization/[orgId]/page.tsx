@@ -65,11 +65,9 @@ export default async function OrganizationDetailPage({
             aria-hidden="true"
             className="mx-auto size-8 text-muted-foreground"
           />
-          <p className="mt-3 text-sm font-medium">
-            Files shared with this organization will appear here
-          </p>
+          <p className="mt-3 text-sm font-medium">Organization files</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Uploading to organizations is not wired up yet.
+            Files uploaded to this organization are listed under Shared.
           </p>
         </div>
       </div>

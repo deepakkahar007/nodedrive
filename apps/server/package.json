@@ -16,7 +16,6 @@
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
     "@fastify/cors": "^11.3.0",
-    "@fastify/multipart": "^10.1.4",
     "@repo/auth": "workspace:*",
     "@repo/drizzle": "workspace:*",
     "@repo/env": "workspace:*",

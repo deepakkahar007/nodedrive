@@ -63,7 +63,7 @@ export function OrganizationNav({
               >
                 <OrganizationLogo
                   logo={organization.logo}
-                  className="size-7 rounded-md"
+                  className="size-7 rounded-md group-data-[collapsible=icon]:size-4"
                 />
                 <span>{organization.name}</span>
               </SidebarMenuButton>

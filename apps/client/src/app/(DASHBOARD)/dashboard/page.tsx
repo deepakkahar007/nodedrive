@@ -1,11 +1,16 @@
 import { House } from "lucide-react";
-import { SectionPlaceholder } from "@/components/dashboard/section-placeholder";
+import { FilesView } from "@/components/dashboard/files-view";
+import { requireSession } from "@/lib/session";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await requireSession();
+
   return (
-    <SectionPlaceholder
+    <FilesView
+      userId={session.user.id}
+      section="home"
       title="Home"
-      description="Recent files and suggestions will appear here."
+      description="Recent files from your drive."
       icon={House}
     />
   );
