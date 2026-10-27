@@ -1,164 +1,327 @@
-```txt
-i have docker-compose.yml file that is setup with mimio storage in docker image, setup the license to read from @s3_storage/mimio.license , and all the uploaded files will be stored in s3_storage/upload folder setup this in docker compose file, use the @ponytail skill to implement this solutions
+# 🚀 NodeDrive
 
+A modern file storage and sharing platform built with cutting-edge technologies. Upload, store, and share your files with ease! 📁✨
+
+---
+
+## ✨ Features
+
+- 🔐 **Secure Authentication** - Built with better-auth for robust user authentication
+- 📤 **File Upload** - Drag & drop or click to upload files effortlessly
+- ☁️ **Cloud Storage** - S3-compatible storage with MinIO for scalable file management
+- 🎨 **Beautiful UI** - Modern, responsive interface built with Next.js and shadcn/ui
+- ⚡ **Fast Performance** - Powered by Bun runtime and Fastify for lightning-fast API responses
+- 🗄️ **Reliable Database** - PostgreSQL with Drizzle ORM for efficient data management
+- 🔄 **Real-time Updates** - Redis for caching and session management
+- 🌙 **Dark Mode** - Built-in theme support for comfortable viewing
+- 📱 **Responsive Design** - Works seamlessly on desktop, tablet, and mobile devices
+
+---
+
+## 🛠 Tech Stack
+
+### Frontend
+
+- **Framework**: Next.js 16 (React 19) ⚛️
+- **Styling**: Tailwind CSS 4 🎨
+- **UI Components**: shadcn/ui, Base UI 🧩
+- **State Management**: Zustand, TanStack Query 📊
+- **Forms**: TanStack Form 📝
+- **Type Safety**: TypeScript 7 📘
+
+### Backend
+
+- **Runtime**: Bun 1.4+ 🥟
+- **Framework**: Fastify 5 ⚡
+- **Database**: PostgreSQL 🐘
+- **ORM**: Drizzle ORM 🗄️
+- **Cache**: Redis 🔴
+- **Storage**: MinIO (S3-compatible) ☁️
+- **Authentication**: better-auth 🔐
+
+### Development Tools
+
+- **Build System**: Turborepo 2 🏗️
+- **Package Manager**: Bun 📦
+- **Linting**: Biome 🔍
+- **Code Quality**: Prettier ✨
+
+---
+
+## 🏗 Architecture
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        A[Next.js Frontend]
+        A --> B[React Components]
+        A --> C[TanStack Query]
+    end
+
+    subgraph "API Layer"
+        D[Fastify Server]
+        D --> E[Auth Routes]
+        D --> F[File Routes]
+        D --> G[User Routes]
+    end
+
+    subgraph "Service Layer"
+        H[Auth Service]
+        I[Storage Service]
+        J[Database Service]
+    end
+
+    subgraph "Data Layer"
+        K[(PostgreSQL)]
+        L[(Redis)]
+        M[(MinIO S3)]
+    end
+
+    A -->|HTTP/REST| D
+    D --> H
+    D --> I
+    D --> J
+    H --> K
+    I --> M
+    J --> K
+    J --> L
+    C -->|Caching| L
 ```
 
-# Turborepo starter
+---
 
-This Turborepo starter is maintained by the Turborepo core team.
+## 📋 Requirements
 
-## Using this example
+- **Node.js**: >= 24 🟢
+- **Bun**: >= 1.4.2 🥟
+- **Docker**: For running infrastructure services 🐳
+- **Git**: For version control 📌
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone <your-repo-url>
+cd nodedrive
 ```
 
-## What's inside?
+### 2. Install Dependencies
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `@next/eslint-plugin-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+bun install
 ```
 
-Without global `turbo`, use your package manager:
+### 3. Start Infrastructure Services
 
-```sh
-cd my-turborepo
-npx turbo build
-bun exec turbo build
-bun exec turbo build
+```bash
+docker-compose up -d
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+This will start:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+- PostgreSQL on port 5432 🐘
+- Redis on port 6379 🔴
+- MinIO on ports 9000 (API) and 9001 (Console) ☁️
 
-```sh
-turbo build --filter=docs
+### 4. Set Up Environment Variables
+
+Create a `.env.local` file in `apps/client/`:
+
+```bash
+NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3001
 ```
 
-Without global `turbo`:
+### 5. Run Database Migrations
 
-```sh
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
+```bash
+cd packages/drizzle
+bun run db:push
 ```
 
-### Develop
+### 6. Start Development Servers
 
-To develop all apps and packages, run the following command:
+```bash
+# Start all services (client + server)
+bun run dev
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+# Or start individually:
+# Client (Next.js)
+cd apps/client && bun run dev
 
-```sh
-cd my-turborepo
-turbo dev
+# Server (Fastify)
+cd apps/server && bun run dev
 ```
 
-Without global `turbo`, use your package manager:
+### 7. Access the Application
 
-```sh
-cd my-turborepo
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
+- **Frontend**: http://localhost:3000 🌐
+- **Backend API**: http://localhost:3001 🔌
+- **MinIO Console**: http://localhost:9001 ☁️
+
+---
+
+## 📁 Project Structure
+
+```
+nodedrive/
+├── apps/
+│   ├── client/              # Next.js frontend application
+│   │   ├── src/
+│   │   │   ├── app/         # Next.js app router pages
+│   │   │   ├── components/  # Reusable UI components
+│   │   │   ├── hooks/       # Custom React hooks
+│   │   │   └── lib/         # Utility functions
+│   │   └── public/          # Static assets
+│   │
+│   └── server/              # Fastify backend application
+│       └── src/
+│           ├── config/      # Server configuration
+│           ├── lib/         # Utility functions
+│           ├── plugins/    # Fastify plugins
+│           └── routes/      # API routes
+│
+├── packages/
+│   ├── auth/                # Authentication library (better-auth)
+│   ├── drizzle/             # Database ORM (Drizzle)
+│   ├── env/                 # Environment configuration
+│   ├── eslint-config/       # Shared ESLint configuration
+│   ├── storage/             # S3 storage client
+│   └── typescript-config/   # Shared TypeScript configuration
+│
+├── s3_storage/              # MinIO storage directory
+├── docker-compose.yml       # Infrastructure services
+├── turbo.json              # Turborepo configuration
+└── package.json            # Root package configuration
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+---
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+## 🧪 Available Scripts
 
-```sh
-turbo dev --filter=web
+### Root Level
+
+```bash
+bun run dev          # Start all services in development mode
+bun run build        # Build all packages and apps
+bun run lint         # Lint all packages and apps
+bun run format       # Format code with Prettier
+bun run check-types  # Type-check all packages and apps
 ```
 
-Without global `turbo`:
+### Database (packages/drizzle)
 
-```sh
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
+```bash
+bun run db:generate  # Generate database migrations
+bun run db:migrate   # Run database migrations
+bun run db:push      # Push schema changes to database
+bun run db:studio    # Open Drizzle Studio
 ```
 
-### Remote Caching
+---
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+## 🔧 Configuration
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+### Environment Variables
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+Create a `.env` file in the root directory (optional):
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+```bash
+# Database
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=postgres
 
-```sh
-cd my-turborepo
-turbo login
+# MinIO/S3
+MINIO_ROOT_USER=admin
+MINIO_ROOT_PASSWORD=password
+S3_BUCKET=nodedrive
+
+# Client URL
+CLIENT_URL=http://localhost:3000
 ```
 
-Without global `turbo`, use your package manager:
+---
 
-```sh
-cd my-turborepo
-npx turbo login
-bun exec turbo login
-bun exec turbo login
+## 🎯 Key Features Explained
+
+### Authentication 🔐
+
+Uses **better-auth** with Drizzle adapter for secure authentication. Supports:
+
+- Email/password authentication
+- Session management
+- Cookie-based auth
+
+### File Storage ☁️
+
+Built on **MinIO** (S3-compatible) with AWS SDK:
+
+- Secure file uploads
+- Presigned URLs for direct access
+- Scalable storage solution
+
+### Database 🗄️
+
+**PostgreSQL** with **Drizzle ORM**:
+
+- Type-safe database queries
+- Automatic migrations
+- Optimized performance
+
+---
+
+## 🐛 Troubleshooting
+
+### Database Connection Issues
+
+```bash
+# Check if PostgreSQL is running
+docker-compose ps postgres
+
+# Restart services
+docker-compose restart
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+### Port Already in Use
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+Change ports in `docker-compose.yml` or stop conflicting services.
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+### Build Errors
 
-```sh
-turbo link
+```bash
+# Clear cache and rebuild
+rm -rf .next node_modules
+bun install
+bun run build
 ```
 
-Without global `turbo`:
+---
 
-```sh
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
+## 📝 License
 
-## Useful Links
+This project is private and proprietary. All rights reserved. © 2026
 
-Learn more about the power of Turborepo:
+---
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
+
+---
+
+## 📧 Support
+
+For support, please open an issue in the repository or contact the development team.
+
+---
+
+**Built with ❤️ using modern web technologies**

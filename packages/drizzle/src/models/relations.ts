@@ -15,6 +15,20 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.FilesTable.organization_id,
       to: r.organization.id,
     }),
+    shares: r.many.FileSharesTable({
+      from: r.FilesTable.id,
+      to: r.FileSharesTable.file_id,
+    }),
+  },
+  FileSharesTable: {
+    file: r.one.FilesTable({
+      from: r.FileSharesTable.file_id,
+      to: r.FilesTable.id,
+    }),
+    user: r.one.user({
+      from: r.FileSharesTable.shared_with_user_id,
+      to: r.user.id,
+    }),
   },
   FolderTable: {
     user: r.one.user({
@@ -46,6 +60,10 @@ export const relations = defineRelations(schema, (r) => ({
     files: r.many.FilesTable({
       from: r.user.id,
       to: r.FilesTable.user_id,
+    }),
+    sharedFiles: r.many.FileSharesTable({
+      from: r.user.id,
+      to: r.FileSharesTable.shared_with_user_id,
     }),
     folders: r.many.FolderTable({
       from: r.user.id,

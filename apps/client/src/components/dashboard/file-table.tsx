@@ -11,15 +11,24 @@ import { FileMenu } from "./file-menu";
 export function FileTable({
   files,
   inBin,
+  showSource = false,
 }: {
   files: FileListItem[];
   inBin: boolean;
+  showSource?: boolean;
 }) {
+  const gridColumns = showSource
+    ? "md:grid-cols-[minmax(0,1fr)_7rem_8rem_9rem_5rem_2.5rem]"
+    : "md:grid-cols-[minmax(0,1fr)_7rem_9rem_5rem_2.5rem]";
+
   return (
     <div className="overflow-hidden rounded-xl border">
-      <div className="hidden grid-cols-[minmax(0,1fr)_7rem_9rem_5rem_2.5rem] items-center gap-3 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground md:grid">
+      <div
+        className={`hidden ${gridColumns} items-center gap-3 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground md:grid`}
+      >
         <span>Name</span>
         <span>Type</span>
+        {showSource ? <span>Source</span> : null}
         <span>Last modified</span>
         <span className="text-right">Size</span>
         <span className="sr-only">Options</span>
@@ -31,11 +40,14 @@ export function FileTable({
           const type = formatFileType(file.extension, file.mimeType);
           const date = formatFileDate(file.updatedAt);
           const size = formatBytes(Number(file.size));
+          const source = file.organizationId
+            ? (file.organizationName ?? "Organization")
+            : "Shared";
 
           return (
             <li
               key={file.id}
-              className="grid grid-cols-[minmax(0,1fr)_2.5rem] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/50 md:grid-cols-[minmax(0,1fr)_7rem_9rem_5rem_2.5rem]"
+              className={`grid grid-cols-[minmax(0,1fr)_2.5rem] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/50 ${gridColumns}`}
             >
               <div className="flex min-w-0 items-center gap-3">
                 <span
@@ -55,7 +67,8 @@ export function FileTable({
                     ) : null}
                   </p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground md:hidden">
-                    {type} · {date} · {size}
+                    {type}
+                    {showSource ? ` · ${source}` : ""} · {date} · {size}
                   </p>
                 </div>
               </div>
@@ -63,6 +76,11 @@ export function FileTable({
               <span className="hidden truncate text-sm text-muted-foreground md:block">
                 {type}
               </span>
+              {showSource ? (
+                <span className="hidden truncate text-sm text-muted-foreground md:block">
+                  {source}
+                </span>
+              ) : null}
               <span className="hidden truncate text-sm text-muted-foreground md:block">
                 {date}
               </span>
@@ -76,6 +94,7 @@ export function FileTable({
                   fileName={file.originalName}
                   isStarred={file.isStarred}
                   inBin={inBin}
+                  canManage={!file.isSharedWithMe}
                 />
               </div>
             </li>

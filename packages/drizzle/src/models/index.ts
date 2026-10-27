@@ -1,4 +1,5 @@
 import { FilesTable } from "./FilesTable";
+import { FileSharesTable } from "./FileSharesTable";
 import {
   user,
   session,
@@ -13,6 +14,7 @@ import { FolderTable } from "./FolderTable";
 
 export {
   FilesTable,
+  FileSharesTable,
   FolderTable,
   user,
   session,

@@ -5,6 +5,7 @@ import {
   Loader2,
   MoreVertical,
   RotateCcw,
+  Share2,
   Star,
   StarOff,
   Trash2,
@@ -17,12 +18,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { getFileDownload, updateFile } from "@/lib/files";
+import { ShareFileDialog } from "./share-file-dialog";
 
 type FileMenuProps = {
   fileId: string;
   fileName: string;
   isStarred: boolean;
   inBin: boolean;
+  canManage: boolean;
 };
 
 const itemClassName =
@@ -33,9 +36,11 @@ export function FileMenu({
   fileName,
   isStarred,
   inBin,
+  canManage,
 }: FileMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,79 +81,102 @@ export function FileMenu({
   }
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={(next) => {
-        if (busy) return;
+    <>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          if (busy) return;
 
-        setOpen(next);
-        if (!next) setError(null);
-      }}
-    >
-      <PopoverTrigger
-        aria-label={`More options for ${fileName}`}
-        className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-4"
+          setOpen(next);
+          if (!next) setError(null);
+        }}
       >
-        {busy ? (
-          <Loader2 aria-hidden="true" className="animate-spin" />
-        ) : (
-          <MoreVertical aria-hidden="true" />
-        )}
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-48 gap-0 p-1">
-        <button
-          type="button"
-          className={itemClassName}
-          disabled={busy}
-          onClick={download}
+        <PopoverTrigger
+          aria-label={`More options for ${fileName}`}
+          className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-4"
         >
-          <Download aria-hidden="true" />
-          Download
-        </button>
-
-        {inBin ? (
+          {busy ? (
+            <Loader2 aria-hidden="true" className="animate-spin" />
+          ) : (
+            <MoreVertical aria-hidden="true" />
+          )}
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-48 gap-0 p-1">
           <button
             type="button"
             className={itemClassName}
             disabled={busy}
-            onClick={() => setTrashed(false)}
+            onClick={download}
           >
-            <RotateCcw aria-hidden="true" />
-            Restore
+            <Download aria-hidden="true" />
+            Download
           </button>
-        ) : (
-          <>
-            <button
-              type="button"
-              className={itemClassName}
-              disabled={busy}
-              onClick={() => setStarred(!isStarred)}
-            >
-              {isStarred ? (
-                <StarOff aria-hidden="true" />
-              ) : (
-                <Star aria-hidden="true" />
-              )}
-              {isStarred ? "Remove from starred" : "Add to starred"}
-            </button>
-            <button
-              type="button"
-              className={`${itemClassName} text-destructive`}
-              disabled={busy}
-              onClick={() => setTrashed(true)}
-            >
-              <Trash2 aria-hidden="true" />
-              Move to bin
-            </button>
-          </>
-        )}
 
-        {error ? (
-          <p role="alert" className="px-2 py-1.5 text-xs text-destructive">
-            {error}
-          </p>
-        ) : null}
-      </PopoverContent>
-    </Popover>
+          {canManage ? (
+            inBin ? (
+              <button
+                type="button"
+                className={itemClassName}
+                disabled={busy}
+                onClick={() => setTrashed(false)}
+              >
+                <RotateCcw aria-hidden="true" />
+                Restore
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={itemClassName}
+                  disabled={busy}
+                  onClick={() => {
+                    setOpen(false);
+                    setShareOpen(true);
+                  }}
+                >
+                  <Share2 aria-hidden="true" />
+                  Share
+                </button>
+                <button
+                  type="button"
+                  className={itemClassName}
+                  disabled={busy}
+                  onClick={() => setStarred(!isStarred)}
+                >
+                  {isStarred ? (
+                    <StarOff aria-hidden="true" />
+                  ) : (
+                    <Star aria-hidden="true" />
+                  )}
+                  {isStarred ? "Remove from starred" : "Add to starred"}
+                </button>
+                <button
+                  type="button"
+                  className={`${itemClassName} text-destructive`}
+                  disabled={busy}
+                  onClick={() => setTrashed(true)}
+                >
+                  <Trash2 aria-hidden="true" />
+                  Move to bin
+                </button>
+              </>
+            )
+          ) : null}
+
+          {error ? (
+            <p role="alert" className="px-2 py-1.5 text-xs text-destructive">
+              {error}
+            </p>
+          ) : null}
+        </PopoverContent>
+      </Popover>
+
+      <ShareFileDialog
+        fileId={fileId}
+        fileName={fileName}
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+      />
+    </>
   );
 }

@@ -1,5 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { getFileForUser, updateFileForUser } from "@repo/drizzle";
+import {
+  getFileForUser,
+  shareFileWithEmail,
+  updateFileForUser,
+} from "@repo/drizzle";
 import { getPresignedDownloadUrl } from "@repo/storage";
 
 const UUID_PATTERN =
@@ -7,6 +11,7 @@ const UUID_PATTERN =
 
 type FileParams = { id: string };
 type UpdateFileBody = { starred?: boolean; trashed?: boolean };
+type ShareFileBody = { email?: string };
 
 export default async function fileRoute(fastify: FastifyInstance) {
   fastify.get<{ Params: FileParams }>(
@@ -37,6 +42,61 @@ export default async function fileRoute(fastify: FastifyInstance) {
       });
 
       return { url: result.url, name: file.originalName };
+    },
+  );
+
+  fastify.post<{ Params: FileParams; Body: ShareFileBody }>(
+    "/files/:id/share",
+    async (request, reply) => {
+      const userId = request.user?.id;
+
+      if (!userId) {
+        return reply.code(401).send({ message: "Unauthorized" });
+      }
+
+      if (!UUID_PATTERN.test(request.params.id)) {
+        return reply.code(400).send({ message: "Invalid file id" });
+      }
+
+      const email =
+        typeof request.body?.email === "string"
+          ? request.body.email.trim()
+          : "";
+
+      if (
+        !email ||
+        email.length > 254 ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      ) {
+        return reply.code(400).send({ message: "Enter a valid email address" });
+      }
+
+      const result = await shareFileWithEmail({
+        fileId: request.params.id,
+        userId,
+        email,
+      });
+
+      if ("error" in result) {
+        switch (result.error) {
+          case "file-not-found":
+            return reply.code(404).send({ message: "File not found" });
+          case "user-not-found":
+            return reply
+              .code(404)
+              .send({ message: "No user found with that email" });
+          case "self":
+            return reply
+              .code(400)
+              .send({ message: "You cannot share a file with yourself" });
+          case "already-shared":
+            return reply
+              .code(409)
+              .send({ message: "This file is already shared with that user" });
+        }
+      }
+
+      return { sharedWith: result.sharedWith };
     },
   );
 

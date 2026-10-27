@@ -1,7 +1,9 @@
 import { getFullOrganization } from "@repo/auth";
+import { listOrganizationFiles } from "@repo/drizzle";
 import { FolderOpen } from "lucide-react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { FileTable } from "@/components/dashboard/file-table";
 import { InviteMemberDialog } from "@/components/organization/invite-member-dialog";
 import { OrganizationLogo } from "@/components/organization/organization-logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,6 +30,11 @@ export default async function OrganizationDetailPage({
   if (!organization) {
     notFound();
   }
+
+  const files = await listOrganizationFiles({
+    organizationId: organization.id,
+    userId: session.user.id,
+  });
 
   const me = organization.members.find(
     (member) => member.userId === session.user.id,
@@ -59,23 +66,46 @@ export default async function OrganizationDetailPage({
         ) : null}
       </header>
 
-      <div className="grid min-h-48 place-items-center rounded-xl border border-dashed bg-muted/30 p-8 text-center">
-        <div>
-          <FolderOpen
-            aria-hidden="true"
-            className="mx-auto size-8 text-muted-foreground"
-          />
-          <p className="mt-3 text-sm font-medium">Organization files</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Files uploaded to this organization are listed under Shared.
-          </p>
+      <section aria-labelledby="files-heading" className="grid gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="files-heading" className="text-sm font-medium">
+            Files
+          </h2>
+          <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
+            {files.length}
+          </span>
         </div>
-      </div>
+
+        {files.length > 0 ? (
+          <FileTable files={files} inBin={false} />
+        ) : (
+          <div className="grid min-h-48 place-items-center rounded-xl border border-dashed bg-muted/30 p-8 text-center">
+            <div>
+              <FolderOpen
+                aria-hidden="true"
+                className="mx-auto size-8 text-muted-foreground"
+              />
+              <p className="mt-3 text-sm font-medium">
+                No files in this organization
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Upload a file and choose {organization.name} to share it with
+                members.
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
 
       <section aria-labelledby="members-heading" className="grid gap-3">
-        <h2 id="members-heading" className="text-sm font-medium">
-          Members
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="members-heading" className="text-sm font-medium">
+            Members
+          </h2>
+          <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
+            {organization.members.length}
+          </span>
+        </div>
         <ul className="divide-y overflow-hidden rounded-xl border">
           {organization.members.map((member) => {
             const name = member.user?.name || member.user?.email || "Member";

@@ -10,8 +10,21 @@ export type FileUpdate = {
   trashed?: boolean;
 };
 
+export type SharedFileUser = {
+  id: string;
+  name: string;
+  email: string;
+};
+
 export function getFileDownload(fileId: string) {
   return apiJson<FileDownload>(`/files/${encodeURIComponent(fileId)}/download`);
+}
+
+export function shareFile(fileId: string, email: string) {
+  return apiJson<{ sharedWith: SharedFileUser }>(
+    `/files/${encodeURIComponent(fileId)}/share`,
+    { method: "POST", body: JSON.stringify({ email }) },
+  );
 }
 
 export function updateFile(fileId: string, input: FileUpdate) {

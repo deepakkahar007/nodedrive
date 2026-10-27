@@ -1,6 +1,21 @@
-import { and, desc, eq, inArray, isNotNull, isNull, or } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import { db } from "../index";
-import { FilesTable, member, organization } from "../models";
+import {
+  FileSharesTable,
+  FilesTable,
+  member,
+  organization,
+  user,
+} from "../models";
 
 export type UserOrganization = {
   id: string;
@@ -82,6 +97,8 @@ export type FileListItem = {
   updatedAt: Date;
   isStarred: boolean;
   organizationId: string | null;
+  organizationName: string | null;
+  isSharedWithMe: boolean;
 };
 
 const fileColumns = {
@@ -109,6 +126,22 @@ function accessibleFiles(userId: string) {
   );
 }
 
+/** Files shared directly with the user. */
+function sharedFileIds(userId: string) {
+  return db
+    .select({ id: FileSharesTable.file_id })
+    .from(FileSharesTable)
+    .where(eq(FileSharesTable.shared_with_user_id, userId));
+}
+
+/** Files the user can read: owned, organization, or shared directly with them. */
+function viewableFiles(userId: string) {
+  return or(
+    accessibleFiles(userId),
+    inArray(FilesTable.id, sharedFileIds(userId)),
+  );
+}
+
 type ListFilesInput = { userId: string; section: FileSection };
 
 export async function listFiles({
@@ -123,32 +156,78 @@ export async function listFiles({
     conditions.push(eq(FilesTable.user_id, userId));
     conditions.push(isNull(FilesTable.organization_id));
   } else {
-    const access = accessibleFiles(userId);
+    const access =
+      section === "bin" || section === "starred"
+        ? accessibleFiles(userId)
+        : viewableFiles(userId);
 
     if (access) conditions.push(access);
   }
 
   if (section === "shared") {
-    conditions.push(isNotNull(FilesTable.organization_id));
+    const shared = or(
+      isNotNull(FilesTable.organization_id),
+      inArray(FilesTable.id, sharedFileIds(userId)),
+    );
+
+    if (shared) conditions.push(shared);
   }
 
   if (section === "starred") {
     conditions.push(eq(FilesTable.is_starred, true));
   }
 
-  return db
-    .select(fileColumns)
+  const files = await db
+    .select({ ...fileColumns, organizationName: organization.name })
     .from(FilesTable)
+    .leftJoin(organization, eq(FilesTable.organization_id, organization.id))
     .where(and(...conditions))
     .orderBy(desc(FilesTable.updatedAt))
     .limit(section === "home" ? 10 : 50);
+
+  const sharedIds = new Set(
+    (await sharedFileIds(userId)).map((file) => file.id),
+  );
+
+  return files.map((file) => ({
+    ...file,
+    isSharedWithMe: sharedIds.has(file.id),
+  }));
+}
+
+type OrganizationFilesInput = { organizationId: string; userId: string };
+
+/** Files belonging to one organization, scoped to its members. */
+export async function listOrganizationFiles({
+  organizationId,
+  userId,
+}: OrganizationFilesInput): Promise<FileListItem[]> {
+  const access = accessibleFiles(userId);
+
+  if (!access) return [];
+
+  const files = await db
+    .select({ ...fileColumns, organizationName: organization.name })
+    .from(FilesTable)
+    .leftJoin(organization, eq(FilesTable.organization_id, organization.id))
+    .where(
+      and(
+        eq(FilesTable.organization_id, organizationId),
+        eq(FilesTable.isDeleted, false),
+        access,
+      ),
+    )
+    .orderBy(desc(FilesTable.updatedAt))
+    .limit(100);
+
+  return files.map((file) => ({ ...file, isSharedWithMe: false }));
 }
 
 type FileIdInput = { fileId: string; userId: string };
 
 /** File details for download, scoped to files the user can access. */
 export async function getFileForUser({ fileId, userId }: FileIdInput) {
-  const access = accessibleFiles(userId);
+  const access = viewableFiles(userId);
 
   if (!access) return null;
 
@@ -193,4 +272,52 @@ export async function updateFileForUser({
     .returning(fileColumns);
 
   return file ?? null;
+}
+
+type ShareFileInput = { fileId: string; userId: string; email: string };
+
+export type ShareFileResult =
+  | { sharedWith: { id: string; name: string; email: string } }
+  | {
+      error: "file-not-found" | "user-not-found" | "self" | "already-shared";
+    };
+
+/** Share an accessible file with another user by email. */
+export async function shareFileWithEmail({
+  fileId,
+  userId,
+  email,
+}: ShareFileInput): Promise<ShareFileResult> {
+  const [file] = await db
+    .select({ id: FilesTable.id })
+    .from(FilesTable)
+    .where(
+      and(
+        eq(FilesTable.id, fileId),
+        eq(FilesTable.user_id, userId),
+        eq(FilesTable.isDeleted, false),
+      ),
+    )
+    .limit(1);
+
+  if (!file) return { error: "file-not-found" };
+
+  const [target] = await db
+    .select({ id: user.id, name: user.name, email: user.email })
+    .from(user)
+    .where(sql`lower(${user.email}) = ${email.trim().toLowerCase()}`)
+    .limit(1);
+
+  if (!target) return { error: "user-not-found" };
+  if (target.id === userId) return { error: "self" };
+
+  const inserted = await db
+    .insert(FileSharesTable)
+    .values({ file_id: fileId, shared_with_user_id: target.id })
+    .onConflictDoNothing()
+    .returning({ id: FileSharesTable.id });
+
+  if (inserted.length === 0) return { error: "already-shared" };
+
+  return { sharedWith: target };
 }

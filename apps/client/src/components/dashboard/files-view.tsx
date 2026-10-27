@@ -61,7 +61,11 @@ export async function FilesView({
       </div>
 
       {files.length > 0 ? (
-        <FileTable files={files} inBin={section === "bin"} />
+        <FileTable
+          files={files}
+          inBin={section === "bin"}
+          showSource={section === "shared"}
+        />
       ) : (
         <div className="grid min-h-64 place-items-center rounded-xl border border-dashed bg-muted/30 p-8 text-center">
           <div>
