@@ -12,6 +12,7 @@ import { db } from "../index";
 import {
   FileSharesTable,
   FilesTable,
+  FolderTable,
   member,
   organization,
   user,
@@ -55,6 +56,7 @@ export async function listUserOrganizations(
 export type CreateFileInput = {
   userId: string;
   organizationId?: string | null;
+  folderId?: string | null;
   storageKey: string;
   name: string;
   originalName: string;
@@ -73,6 +75,7 @@ export async function createFiles(inputs: CreateFileInput[]) {
       inputs.map((input) => ({
         user_id: input.userId,
         organization_id: input.organizationId ?? null,
+        folder_id: input.folderId ?? null,
         storage_url: input.storageKey,
         name: input.name,
         originalName: input.originalName,
@@ -82,6 +85,102 @@ export async function createFiles(inputs: CreateFileInput[]) {
       })),
     )
     .returning();
+}
+
+export type FolderListItem = {
+  id: string;
+  name: string;
+  parentId: string | null;
+  updatedAt: Date;
+};
+
+const folderColumns = {
+  id: FolderTable.id,
+  name: FolderTable.name,
+  parentId: FolderTable.parent_id,
+  updatedAt: FolderTable.updatedAt,
+};
+
+type ListFoldersInput = { userId: string };
+
+/** Folders owned by the user: flat list, callers nest by parentId. */
+export async function listFolders({
+  userId,
+}: ListFoldersInput): Promise<FolderListItem[]> {
+  return db
+    .select(folderColumns)
+    .from(FolderTable)
+    .where(
+      and(eq(FolderTable.user_id, userId), eq(FolderTable.isDeleted, false)),
+    )
+    .orderBy(FolderTable.name);
+}
+
+type CreateFolderInput = {
+  userId: string;
+  name: string;
+  parentId?: string | null;
+};
+
+export async function createFolder({
+  userId,
+  name,
+  parentId,
+}: CreateFolderInput): Promise<FolderListItem> {
+  const [folder] = await db
+    .insert(FolderTable)
+    .values({
+      user_id: userId,
+      name,
+      parent_id: parentId ?? null,
+    })
+    .returning(folderColumns);
+
+  if (!folder) throw new Error("Folder insert returned no row");
+
+  return folder;
+}
+
+type FolderIdInput = { folderId: string; userId: string };
+
+/** One folder the user owns, or null. */
+export async function getFolderForUser({
+  folderId,
+  userId,
+}: FolderIdInput): Promise<FolderListItem | null> {
+  const [folder] = await db
+    .select(folderColumns)
+    .from(FolderTable)
+    .where(
+      and(
+        eq(FolderTable.id, folderId),
+        eq(FolderTable.user_id, userId),
+        eq(FolderTable.isDeleted, false),
+      ),
+    )
+    .limit(1);
+
+  return folder ?? null;
+}
+
+/** Ancestors for breadcrumbs, root first. Depth cap breaks corrupt cycles. */
+export async function getFolderAncestors({
+  folderId,
+  userId,
+}: FolderIdInput): Promise<FolderListItem[]> {
+  const ancestors: FolderListItem[] = [];
+  let parentId = (await getFolderForUser({ folderId, userId }))?.parentId;
+
+  while (parentId && ancestors.length < 32) {
+    const parent = await getFolderForUser({ folderId: parentId, userId });
+
+    if (!parent) break;
+
+    ancestors.unshift(parent);
+    parentId = parent.parentId;
+  }
+
+  return ancestors;
 }
 
 export type FileSection =
@@ -96,6 +195,7 @@ export type FileListItem = {
   size: string;
   updatedAt: Date;
   isStarred: boolean;
+  folderId: string | null;
   organizationId: string | null;
   organizationName: string | null;
   isSharedWithMe: boolean;
@@ -110,6 +210,7 @@ const fileColumns = {
   size: FilesTable.size,
   updatedAt: FilesTable.updatedAt,
   isStarred: FilesTable.is_starred,
+  folderId: FilesTable.folder_id,
   organizationId: FilesTable.organization_id,
 };
 
@@ -152,6 +253,10 @@ export async function listFiles({
 
   const conditions = [eq(FilesTable.isDeleted, section === "bin")];
 
+  if (section === "home" || section === "my-drive") {
+    conditions.push(isNull(FilesTable.folder_id));
+  }
+
   if (section === "my-drive") {
     conditions.push(eq(FilesTable.user_id, userId));
     conditions.push(isNull(FilesTable.organization_id));
@@ -193,6 +298,83 @@ export async function listFiles({
     ...file,
     isSharedWithMe: sharedIds.has(file.id),
   }));
+}
+
+type FolderFilesInput = { folderId: string; userId: string };
+
+/** Files inside one folder, scoped to what the user can read. */
+export async function listFolderFiles({
+  folderId,
+  userId,
+}: FolderFilesInput): Promise<FileListItem[]> {
+  const access = accessibleFiles(userId);
+
+  if (!access) return [];
+
+  const files = await db
+    .select({ ...fileColumns, organizationName: organization.name })
+    .from(FilesTable)
+    .leftJoin(organization, eq(FilesTable.organization_id, organization.id))
+    .where(
+      and(
+        eq(FilesTable.folder_id, folderId),
+        eq(FilesTable.isDeleted, false),
+        access,
+      ),
+    )
+    .orderBy(desc(FilesTable.updatedAt));
+
+  const sharedIds = new Set(
+    (await sharedFileIds(userId)).map((file) => file.id),
+  );
+
+  return files.map((file) => ({
+    ...file,
+    isSharedWithMe: sharedIds.has(file.id),
+  }));
+}
+
+type MoveFileInput = {
+  fileId: string;
+  userId: string;
+  folderId: string | null;
+};
+
+export type MoveFileResult =
+  | { file: FileListItem }
+  | { error: "file-not-found" | "folder-not-found" };
+
+/** Move an accessible file into a folder the user owns, or to the root. */
+export async function moveFileToFolder({
+  fileId,
+  userId,
+  folderId,
+}: MoveFileInput): Promise<MoveFileResult> {
+  if (folderId) {
+    const folder = await getFolderForUser({ folderId, userId });
+
+    if (!folder) return { error: "folder-not-found" };
+  }
+
+  const access = accessibleFiles(userId);
+
+  if (!access) return { error: "file-not-found" };
+
+  const [file] = await db
+    .update(FilesTable)
+    .set({ folder_id: folderId, updatedAt: new Date() })
+    .where(
+      and(
+        eq(FilesTable.id, fileId),
+        eq(FilesTable.isDeleted, false),
+        access,
+      ),
+    )
+    .returning(fileColumns);
+
+  if (!file) return { error: "file-not-found" };
+
+  return { file: { ...file, organizationName: null, isSharedWithMe: false } };
 }
 
 type OrganizationFilesInput = { organizationId: string; userId: string };

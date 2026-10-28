@@ -1,20 +1,33 @@
 import type { FastifyInstance } from "fastify";
-import { createFiles, listUserOrganizations } from "@repo/drizzle";
+import {
+  createFiles,
+  getFolderForUser,
+  listUserOrganizations,
+} from "@repo/drizzle";
 import {
   createStorageKey,
   getObjectMetadata,
   getPresignedUploadUrl,
   type ObjectMetadata,
 } from "@repo/storage";
+import { isUuid } from "../lib/uuid";
 
 const MAX_FILES = 20;
 const MAX_FILE_BYTES = 5 * 1024 * 1024 * 1024;
 const DEFAULT_MIME_TYPE = "application/octet-stream";
 
 type PresignFile = { name: string; size: number; mimeType?: string };
-type PresignBody = { organizationId?: string | null; files?: PresignFile[] };
+type PresignBody = {
+  organizationId?: string | null;
+  folderId?: string | null;
+  files?: PresignFile[];
+};
 type CompleteFile = { key: string; name: string; mimeType?: string };
-type CompleteBody = { organizationId?: string | null; files?: CompleteFile[] };
+type CompleteBody = {
+  organizationId?: string | null;
+  folderId?: string | null;
+  files?: CompleteFile[];
+};
 
 function splitFileName(fileName: string) {
   const safeName = fileName.trim().slice(0, 255) || "file";
@@ -41,6 +54,33 @@ async function userCanUseOrganization(
   return organizations.some(
     (organization) => organization.id === organizationId,
   );
+}
+
+type FolderResolution = { folderId: string | null } | { error: string };
+
+async function resolveFolderId(input: {
+  userId: string;
+  rawFolderId: unknown;
+  organizationId: string | null;
+}): Promise<FolderResolution> {
+  const raw = input.rawFolderId ?? null;
+
+  if (raw === null) return { folderId: null };
+
+  if (typeof raw !== "string" || !isUuid(raw)) {
+    return { error: "Invalid folder" };
+  }
+
+  if (input.organizationId) {
+    return { error: "Folders are personal only" };
+  }
+
+  const folder = await getFolderForUser({
+    folderId: raw,
+    userId: input.userId,
+  });
+
+  return folder ? { folderId: raw } : { error: "Folder not found" };
 }
 
 function storageScope(userId: string, organizationId: string | null): string {
@@ -103,12 +143,23 @@ export default async function uploadRoute(fastify: FastifyInstance) {
       return reply.code(403).send({ message: "Organization access denied" });
     }
 
+    const folder = await resolveFolderId({
+      userId,
+      rawFolderId: body?.folderId,
+      organizationId,
+    });
+
+    if ("error" in folder) {
+      return reply.code(400).send({ message: folder.error });
+    }
+
     const presigned = await Promise.all(
       files.map(async (file) => {
         const contentType = file.mimeType || DEFAULT_MIME_TYPE;
         const key = createStorageKey({
           userId,
           organizationId,
+          folderId: folder.folderId,
           fileName: file.name,
         });
         const result = await getPresignedUploadUrl({ key, contentType });
@@ -155,6 +206,16 @@ export default async function uploadRoute(fastify: FastifyInstance) {
       return reply.code(403).send({ message: "Organization access denied" });
     }
 
+    const folder = await resolveFolderId({
+      userId,
+      rawFolderId: body?.folderId,
+      organizationId,
+    });
+
+    if ("error" in folder) {
+      return reply.code(400).send({ message: folder.error });
+    }
+
     const scope = storageScope(userId, organizationId);
     const keys = new Set<string>();
 
@@ -195,6 +256,7 @@ export default async function uploadRoute(fastify: FastifyInstance) {
       rows.push({
         userId,
         organizationId,
+        folderId: folder.folderId,
         storageKey: file.key,
         name,
         originalName,

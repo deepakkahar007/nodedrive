@@ -19,6 +19,13 @@ export function isPublicPath(pathname: string) {
 
 /** True when a dashboard nav item should be highlighted for the current path. */
 export function isDashboardPathActive(pathname: string, href: string) {
+  if (
+    href === "/dashboard/my-drive" &&
+    pathname.startsWith("/dashboard/folder/")
+  ) {
+    return true;
+  }
+
   return href === "/dashboard"
     ? pathname === href
     : pathname === href || pathname.startsWith(`${href}/`);

@@ -10,7 +10,7 @@ const sectionDetails: Record<
 > = {
   "my-drive": {
     section: "my-drive",
-    description: "Files you own in your personal drive.",
+    description: "Files and folders you own in your personal drive.",
   },
   computers: {
     section: "computers",

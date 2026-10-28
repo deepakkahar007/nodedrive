@@ -54,7 +54,11 @@ function fileKey(file: File) {
   return `${file.name}:${file.size}:${file.lastModified}`;
 }
 
-export function UploadDialog() {
+export function UploadDialog({
+  folderId = null,
+}: {
+  folderId?: string | null;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -134,7 +138,7 @@ export function UploadDialog() {
 
     if (next) {
       resetUploadState();
-      void loadOrganizations();
+      if (!folderId) void loadOrganizations();
       return;
     }
 
@@ -162,7 +166,11 @@ export function UploadDialog() {
     let settledBytes = 0;
 
     try {
-      const presigned = await presignUploads(files, organizationId);
+      const presigned = await presignUploads(
+        files,
+        folderId ? null : organizationId,
+        folderId,
+      );
 
       for (const [index, file] of files.entries()) {
         const target = presigned[index];
@@ -225,7 +233,8 @@ export function UploadDialog() {
             name: file.name,
             mimeType: file.type || "application/octet-stream",
           })),
-          organizationId,
+          folderId ? null : organizationId,
+          folderId,
         );
         setCompletedCount(uploaded.length);
         router.refresh();
@@ -349,94 +358,96 @@ export function UploadDialog() {
             </ul>
           ) : null}
 
-          <div className="grid gap-1.5">
-            <span className="text-sm font-medium">Organization</span>
-            <Popover
-              open={organizationOpen}
-              onOpenChange={(next) => {
-                if (!uploading) setOrganizationOpen(next);
-              }}
-            >
-              <PopoverTrigger
-                type="button"
-                aria-label="Organization"
-                disabled={uploading}
-                className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
+          {folderId ? null : (
+            <div className="grid gap-1.5">
+              <span className="text-sm font-medium">Organization</span>
+              <Popover
+                open={organizationOpen}
+                onOpenChange={(next) => {
+                  if (!uploading) setOrganizationOpen(next);
+                }}
               >
-                <span className="flex min-w-0 items-center gap-2">
-                  <Building2
+                <PopoverTrigger
+                  type="button"
+                  aria-label="Organization"
+                  disabled={uploading}
+                  className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Building2
+                      aria-hidden="true"
+                      className="size-4 shrink-0 text-muted-foreground"
+                    />
+                    <span className="truncate">
+                      {selectedOrganization?.name ?? "No organization"}
+                    </span>
+                  </span>
+                  <ChevronsUpDown
                     aria-hidden="true"
                     className="size-4 shrink-0 text-muted-foreground"
                   />
-                  <span className="truncate">
-                    {selectedOrganization?.name ?? "No organization"}
-                  </span>
-                </span>
-                <ChevronsUpDown
-                  aria-hidden="true"
-                  className="size-4 shrink-0 text-muted-foreground"
-                />
-              </PopoverTrigger>
+                </PopoverTrigger>
 
-              <PopoverContent
-                align="start"
-                className="w-[var(--anchor-width)] gap-0 p-1"
-              >
-                <div className="flex flex-col">
-                  <button
-                    type="button"
-                    aria-pressed={organizationId === null}
-                    className={optionClassName}
-                    onClick={() => {
-                      setOrganizationId(null);
-                      setOrganizationOpen(false);
-                    }}
-                  >
-                    <span>No organization</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      Personal
-                    </span>
-                  </button>
-
-                  {organizations.map((organization) => (
+                <PopoverContent
+                  align="start"
+                  className="w-[var(--anchor-width)] gap-0 p-1"
+                >
+                  <div className="flex flex-col">
                     <button
-                      key={organization.id}
                       type="button"
-                      aria-pressed={organizationId === organization.id}
+                      aria-pressed={organizationId === null}
                       className={optionClassName}
                       onClick={() => {
-                        setOrganizationId(organization.id);
+                        setOrganizationId(null);
                         setOrganizationOpen(false);
                       }}
                     >
-                      <span className="truncate">{organization.name}</span>
+                      <span>No organization</span>
                       <span className="shrink-0 text-xs text-muted-foreground">
-                        {organization.access === "owned" ? "Owned" : "Shared"}
+                        Personal
                       </span>
                     </button>
-                  ))}
 
-                  {organizationsLoading ? (
-                    <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                      Loading organizations...
-                    </p>
-                  ) : null}
+                    {organizations.map((organization) => (
+                      <button
+                        key={organization.id}
+                        type="button"
+                        aria-pressed={organizationId === organization.id}
+                        className={optionClassName}
+                        onClick={() => {
+                          setOrganizationId(organization.id);
+                          setOrganizationOpen(false);
+                        }}
+                      >
+                        <span className="truncate">{organization.name}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {organization.access === "owned" ? "Owned" : "Shared"}
+                        </span>
+                      </button>
+                    ))}
 
-                  {organizationsError ? (
-                    <p
-                      className="px-2 py-1.5 text-xs text-destructive"
-                      role="alert"
-                    >
-                      {organizationsError}
-                    </p>
-                  ) : null}
-                </div>
-              </PopoverContent>
-            </Popover>
-            <p className="text-xs text-muted-foreground">
-              Leave empty to upload to your personal drive.
-            </p>
-          </div>
+                    {organizationsLoading ? (
+                      <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                        Loading organizations...
+                      </p>
+                    ) : null}
+
+                    {organizationsError ? (
+                      <p
+                        className="px-2 py-1.5 text-xs text-destructive"
+                        role="alert"
+                      >
+                        {organizationsError}
+                      </p>
+                    ) : null}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                Leave empty to upload to your personal drive.
+              </p>
+            </div>
+          )}
 
           {uploading || progress > 0 ? (
             <div className="grid gap-1.5">

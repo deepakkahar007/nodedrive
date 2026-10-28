@@ -24,11 +24,13 @@ type CompleteInput = {
 export async function presignUploads(
   files: File[],
   organizationId: string | null,
+  folderId: string | null = null,
 ): Promise<PresignedUpload[]> {
   const data = await apiJson<{ files: PresignedUpload[] }>("/uploads/presign", {
     method: "POST",
     body: JSON.stringify({
       organizationId,
+      folderId,
       files: files.map((file) => ({
         name: file.name,
         size: file.size,
@@ -43,10 +45,11 @@ export async function presignUploads(
 export async function completeUploads(
   files: CompleteInput[],
   organizationId: string | null,
+  folderId: string | null = null,
 ): Promise<UploadedFile[]> {
   const data = await apiJson<{ files: UploadedFile[] }>("/uploads/complete", {
     method: "POST",
-    body: JSON.stringify({ organizationId, files }),
+    body: JSON.stringify({ organizationId, folderId, files }),
   });
 
   return data.files;

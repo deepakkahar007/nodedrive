@@ -1,17 +1,22 @@
 import type { FastifyInstance } from "fastify";
 import {
   getFileForUser,
+  moveFileToFolder,
   shareFileWithEmail,
   updateFileForUser,
 } from "@repo/drizzle";
 import { getPresignedDownloadUrl } from "@repo/storage";
-
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isUuid } from "../lib/uuid";
 
 type FileParams = { id: string };
-type UpdateFileBody = { starred?: boolean; trashed?: boolean };
+type UpdateFileBody = {
+  starred?: boolean;
+  trashed?: boolean;
+  folderId?: string | null;
+};
 type ShareFileBody = { email?: string };
+
+const isInvalidId = (id: string) => !isUuid(id);
 
 export default async function fileRoute(fastify: FastifyInstance) {
   fastify.get<{ Params: FileParams }>(
@@ -23,7 +28,7 @@ export default async function fileRoute(fastify: FastifyInstance) {
         return reply.code(401).send({ message: "Unauthorized" });
       }
 
-      if (!UUID_PATTERN.test(request.params.id)) {
+      if (isInvalidId(request.params.id)) {
         return reply.code(400).send({ message: "Invalid file id" });
       }
 
@@ -54,7 +59,7 @@ export default async function fileRoute(fastify: FastifyInstance) {
         return reply.code(401).send({ message: "Unauthorized" });
       }
 
-      if (!UUID_PATTERN.test(request.params.id)) {
+      if (isInvalidId(request.params.id)) {
         return reply.code(400).send({ message: "Invalid file id" });
       }
 
@@ -109,11 +114,47 @@ export default async function fileRoute(fastify: FastifyInstance) {
         return reply.code(401).send({ message: "Unauthorized" });
       }
 
-      if (!UUID_PATTERN.test(request.params.id)) {
+      if (isInvalidId(request.params.id)) {
         return reply.code(400).send({ message: "Invalid file id" });
       }
 
       const body = (request.body ?? {}) as UpdateFileBody;
+      const hasFolder = "folderId" in body;
+      const hasFlags = body.starred !== undefined || body.trashed !== undefined;
+
+      if (hasFolder && hasFlags) {
+        return reply.code(400).send({ message: "Send one change at a time" });
+      }
+
+      if (hasFolder) {
+        const folderId = body.folderId ?? null;
+
+        if (
+          folderId !== null &&
+          (typeof folderId !== "string" || !isUuid(folderId))
+        ) {
+          return reply.code(400).send({ message: "Invalid folder id" });
+        }
+
+        const result = await moveFileToFolder({
+          fileId: request.params.id,
+          userId,
+          folderId,
+        });
+
+        if ("error" in result) {
+          return reply
+            .code(404)
+            .send({
+              message:
+                result.error === "folder-not-found"
+                  ? "Folder not found"
+                  : "File not found",
+            });
+        }
+
+        return { file: result.file };
+      }
 
       if (
         (body.starred !== undefined && typeof body.starred !== "boolean") ||

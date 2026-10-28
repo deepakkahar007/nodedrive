@@ -8,6 +8,7 @@ export type FileDownload = {
 export type FileUpdate = {
   starred?: boolean;
   trashed?: boolean;
+  folderId?: string | null;
 };
 
 export type SharedFileUser = {

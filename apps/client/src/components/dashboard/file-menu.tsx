@@ -1,7 +1,9 @@
 "use client";
 
+import type { FolderListItem } from "@repo/drizzle";
 import {
   Download,
+  FolderInput,
   Loader2,
   MoreVertical,
   RotateCcw,
@@ -18,6 +20,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { getFileDownload, updateFile } from "@/lib/files";
+import { MoveFileDialog } from "./move-file-dialog";
 import { ShareFileDialog } from "./share-file-dialog";
 
 type FileMenuProps = {
@@ -26,6 +29,8 @@ type FileMenuProps = {
   isStarred: boolean;
   inBin: boolean;
   canManage: boolean;
+  folders: FolderListItem[];
+  currentFolderId: string | null;
 };
 
 const itemClassName =
@@ -37,10 +42,13 @@ export function FileMenu({
   isStarred,
   inBin,
   canManage,
+  folders,
+  currentFolderId,
 }: FileMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,6 +133,20 @@ export function FileMenu({
               </button>
             ) : (
               <>
+                {folders.length > 0 || currentFolderId ? (
+                  <button
+                    type="button"
+                    className={itemClassName}
+                    disabled={busy}
+                    onClick={() => {
+                      setOpen(false);
+                      setMoveOpen(true);
+                    }}
+                  >
+                    <FolderInput aria-hidden="true" />
+                    Move to folder
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className={itemClassName}
@@ -176,6 +198,15 @@ export function FileMenu({
         fileName={fileName}
         open={shareOpen}
         onOpenChange={setShareOpen}
+      />
+
+      <MoveFileDialog
+        fileId={fileId}
+        fileName={fileName}
+        currentFolderId={currentFolderId}
+        folders={folders}
+        open={moveOpen}
+        onOpenChange={setMoveOpen}
       />
     </>
   );

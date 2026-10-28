@@ -1,4 +1,4 @@
-import type { FileListItem } from "@repo/drizzle";
+import type { FileListItem, FolderListItem } from "@repo/drizzle";
 import { Star } from "lucide-react";
 import {
   formatBytes,
@@ -12,10 +12,14 @@ export function FileTable({
   files,
   inBin,
   showSource = false,
+  folders = [],
+  currentFolderId = null,
 }: {
   files: FileListItem[];
   inBin: boolean;
   showSource?: boolean;
+  folders?: FolderListItem[];
+  currentFolderId?: string | null;
 }) {
   const gridColumns = showSource
     ? "md:grid-cols-[minmax(0,1fr)_7rem_8rem_9rem_5rem_2.5rem]"
@@ -95,6 +99,8 @@ export function FileTable({
                   isStarred={file.isStarred}
                   inBin={inBin}
                   canManage={!file.isSharedWithMe}
+                  folders={folders}
+                  currentFolderId={currentFolderId}
                 />
               </div>
             </li>

@@ -1,16 +1,19 @@
-import { type FileSection, listFiles } from "@repo/drizzle";
+import { type FileSection, listFiles, listFolders } from "@repo/drizzle";
 import type { LucideIcon } from "lucide-react";
+import { CreateFolderDialog } from "./create-folder-dialog";
+import { EmptyState } from "./empty-state";
 import { FileTable } from "./file-table";
+import { FolderGrid } from "./folder-grid";
 import { UploadDialog } from "./upload-dialog";
 
 const emptyCopy: Record<FileSection, { title: string; description: string }> = {
   home: {
     title: "No files yet",
-    description: "Upload a file and it will show up here.",
+    description: "Upload a file or create a folder to get started.",
   },
   "my-drive": {
     title: "My Drive is empty",
-    description: "Files you upload to your personal drive will appear here.",
+    description: "Files and folders you create will appear here.",
   },
   computers: {
     title: "No computers connected",
@@ -47,7 +50,12 @@ export async function FilesView({
   description: string;
   icon: LucideIcon;
 }) {
-  const files = await listFiles({ userId, section });
+  const showFolders = section === "home" || section === "my-drive";
+  const [files, folders] = await Promise.all([
+    listFiles({ userId, section }),
+    showFolders ? listFolders({ userId }) : Promise.resolve([]),
+  ]);
+  const rootFolders = folders.filter((folder) => folder.parentId === null);
   const empty = emptyCopy[section];
 
   return (
@@ -57,29 +65,41 @@ export async function FilesView({
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
-        <UploadDialog />
+        <div className="flex flex-wrap items-center gap-2">
+          {showFolders ? <CreateFolderDialog parentId={null} /> : null}
+          <UploadDialog />
+        </div>
       </div>
 
+      {rootFolders.length > 0 ? (
+        <section aria-labelledby="folders-heading" className="grid gap-3">
+          <h2 id="folders-heading" className="text-sm font-medium">
+            Folders
+          </h2>
+          <FolderGrid folders={rootFolders} />
+        </section>
+      ) : null}
+
       {files.length > 0 ? (
-        <FileTable
-          files={files}
-          inBin={section === "bin"}
-          showSource={section === "shared"}
+        <section aria-labelledby="files-heading" className="grid gap-3">
+          <h2 id="files-heading" className="text-sm font-medium">
+            {section === "home" ? "Recent files" : "Files"}
+          </h2>
+          <FileTable
+            files={files}
+            folders={folders}
+            currentFolderId={null}
+            inBin={section === "bin"}
+            showSource={section === "shared"}
+          />
+        </section>
+      ) : rootFolders.length === 0 ? (
+        <EmptyState
+          icon={Icon}
+          title={empty.title}
+          description={empty.description}
         />
-      ) : (
-        <div className="grid min-h-64 place-items-center rounded-xl border border-dashed bg-muted/30 p-8 text-center">
-          <div>
-            <Icon
-              aria-hidden="true"
-              className="mx-auto size-8 text-muted-foreground"
-            />
-            <p className="mt-3 text-sm font-medium">{empty.title}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {empty.description}
-            </p>
-          </div>
-        </div>
-      )}
+      ) : null}
     </section>
   );
 }

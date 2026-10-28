@@ -10,7 +10,7 @@ export default async function DashboardPage() {
       userId={session.user.id}
       section="home"
       title="Home"
-      description="Recent files from your drive."
+      description="Folders and recent files at the top level of your drive."
       icon={House}
     />
   );

@@ -7,6 +7,7 @@ import corsPlugin from "./plugins/cors";
 import authGuard from "./plugins/authGuard";
 import authPlugin from "./plugins/auth";
 import fileRoute from "./routes/fileRoute";
+import folderRoute from "./routes/folderRoute";
 import healthRoutes from "./routes/healthRoute";
 import organizationRoute from "./routes/organizationRoute";
 import uploadRoute from "./routes/uploadRoute";
@@ -28,6 +29,7 @@ export async function buildApp(options: FastifyServerOptions = {}) {
   await fastify.register(organizationRoute);
   await fastify.register(uploadRoute);
   await fastify.register(fileRoute);
+  await fastify.register(folderRoute);
 
   return fastify;
 }
