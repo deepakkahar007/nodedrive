@@ -31,6 +31,7 @@ export function GoogleAuthButton({
       variant="outline"
       disabled={pending}
       onClick={handleClick}
+      className="h-11 w-full rounded-xl"
     >
       <GoogleIcon className="size-4" />
       Continue with Google

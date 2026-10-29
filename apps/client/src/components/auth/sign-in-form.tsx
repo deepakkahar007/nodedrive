@@ -86,7 +86,11 @@ export function SignInForm() {
 
         <form.Subscribe selector={(state) => state.isSubmitting}>
           {(isSubmitting) => (
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-11 w-full rounded-xl bg-[#3d63f5] text-white hover:bg-[#2e52df]"
+            >
               Sign in
             </Button>
           )}

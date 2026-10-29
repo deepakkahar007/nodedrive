@@ -17,12 +17,15 @@ export function AuthField({
 }: AuthFieldProps) {
   return (
     <div className="grid gap-2">
-      <Label htmlFor={field.name}>{label}</Label>
+      <Label className="text-sm font-medium" htmlFor={field.name}>
+        {label}
+      </Label>
       <Input
         id={field.name}
         name={field.name}
         type={type}
         autoComplete={autoComplete}
+        className="h-11 rounded-xl px-3.5"
         value={field.state.value}
         aria-invalid={field.state.meta.errors.length > 0}
         onBlur={field.handleBlur}

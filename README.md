@@ -240,7 +240,7 @@ MINIO_ROOT_PASSWORD=password
 S3_BUCKET=nodedrive
 
 # Client URL
-CLIENT_URL=http://localhost:3000
+CLIENT_URL=http://localhost:3000 # Public site origin; used for canonical URLs and sitemap
 ```
 
 ---

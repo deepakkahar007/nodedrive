@@ -1,45 +1,59 @@
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import type { Metadata } from "next";
+import { LandingPage } from "@/components/dashboard/landing-page";
 
-export default async function Home() {
+const siteUrl = process.env.CLIENT_URL;
+const socialImage = siteUrl ? new URL("/og", siteUrl).toString() : undefined;
+
+export const metadata: Metadata = {
+  metadataBase: siteUrl ? new URL(siteUrl) : undefined,
+  title: "Shared storage for teams",
+  description:
+    "Upload, organize, and share team files from one simple workspace.",
+  ...(siteUrl ? { alternates: { canonical: "/" } } : {}),
+  openGraph: {
+    type: "website",
+    siteName: "NodeDrive",
+    title: "Shared storage for teams | NodeDrive",
+    description:
+      "Upload, organize, and share team files from one simple workspace.",
+    ...(siteUrl ? { url: new URL("/", siteUrl).toString() } : {}),
+    ...(socialImage
+      ? {
+          images: [
+            { url: socialImage, alt: "NodeDrive shared team workspace" },
+          ],
+        }
+      : {}),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shared storage for teams | NodeDrive",
+    description:
+      "Upload, organize, and share team files from one simple workspace.",
+    ...(socialImage ? { images: [socialImage] } : {}),
+  },
+};
+
+export default function Home() {
+  const structuredData = siteUrl
+    ? {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "NodeDrive",
+        url: siteUrl,
+        description:
+          "Shared cloud storage for teams to organize and share files.",
+      }
+    : null;
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-8 px-6 text-center">
-      <div className="space-y-2">
-        <h1 className="text-4xl font-semibold tracking-tight">NodeDrive</h1>
-        <p className="text-muted-foreground">
-          Store and share files from anywhere.
-        </p>
-
-        <Button>
-          <Link href={"/auth"}>Sign IN</Link>
-        </Button>
-      </div>
-
-      {/* {session ? (
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            Signed in as {session.user.email}
-          </p>
-          <div className="flex gap-3">
-            <Link href="/dashboard" className={cn(buttonVariants())}>
-              Go to dashboard
-            </Link>
-            <SignOutButton />
-          </div>
-        </div>
-      ) : (
-        <div className="flex gap-3">
-          <Link href="/sign-in" className={cn(buttonVariants())}>
-            Sign in
-          </Link>
-          <Link
-            href="/sign-up"
-            className={cn(buttonVariants({ variant: "outline" }))}
-          >
-            Create account
-          </Link>
-        </div>
-      )} */}
-    </main>
+    <>
+      {structuredData ? (
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData).replace(/</g, "\\u003c")}
+        </script>
+      ) : null}
+      <LandingPage />
+    </>
   );
 }

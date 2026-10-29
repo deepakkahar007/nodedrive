@@ -1,7 +1,7 @@
 /** Route groups. Any path not listed here requires a session. */
 
 /** Reachable without a session. */
-export const publicRoutes = ["/", "/about", "/license"] as const;
+export const publicRoutes = ["/", "/about", "/license", "/og"] as const;
 
 /** Sign-in / sign-up. Open to everyone; the session redirect lives in the layout. */
 export const authRoutes = ["/auth"] as const;
