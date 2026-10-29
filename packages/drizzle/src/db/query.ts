@@ -2,6 +2,7 @@ import {
   and,
   desc,
   eq,
+  ilike,
   inArray,
   isNotNull,
   isNull,
@@ -420,6 +421,43 @@ export async function getFileForUser({ fileId, userId }: FileIdInput) {
     .limit(1);
 
   return file ?? null;
+}
+
+export type FileSearchItem = {
+  id: string;
+  originalName: string;
+  extension: string;
+  mimeType: string;
+  size: string;
+};
+
+type SearchFilesInput = { userId: string; query: string };
+
+/** Non-deleted files the user can read whose name contains the query. */
+export async function searchFilesByName({
+  userId,
+  query,
+}: SearchFilesInput): Promise<FileSearchItem[]> {
+  const pattern = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
+
+  return db
+    .select({
+      id: FilesTable.id,
+      originalName: FilesTable.originalName,
+      extension: FilesTable.extension,
+      mimeType: FilesTable.mime_type,
+      size: FilesTable.size,
+    })
+    .from(FilesTable)
+    .where(
+      and(
+        eq(FilesTable.isDeleted, false),
+        ilike(FilesTable.originalName, pattern),
+        viewableFiles(userId),
+      ),
+    )
+    .orderBy(desc(FilesTable.updatedAt))
+    .limit(10);
 }
 
 type UpdateFileInput = {

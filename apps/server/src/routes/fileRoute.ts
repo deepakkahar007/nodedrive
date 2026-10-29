@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import {
   getFileForUser,
   moveFileToFolder,
+  searchFilesByName,
   shareFileWithEmail,
   updateFileForUser,
 } from "@repo/drizzle";
@@ -9,6 +10,7 @@ import { getPresignedDownloadUrl } from "@repo/storage";
 import { isUuid } from "../lib/uuid";
 
 type FileParams = { id: string };
+type SearchQuery = { q?: string };
 type UpdateFileBody = {
   starred?: boolean;
   trashed?: boolean;
@@ -19,6 +21,28 @@ type ShareFileBody = { email?: string };
 const isInvalidId = (id: string) => !isUuid(id);
 
 export default async function fileRoute(fastify: FastifyInstance) {
+  fastify.get<{ Querystring: SearchQuery }>(
+    "/files/search",
+    async (request, reply) => {
+      const userId = request.user?.id;
+
+      if (!userId) {
+        return reply.code(401).send({ message: "Unauthorized" });
+      }
+
+      const query =
+        typeof request.query.q === "string" ? request.query.q.trim() : "";
+
+      if (query.length > 100) {
+        return reply.code(400).send({ message: "Search is too long" });
+      }
+
+      if (!query) return { files: [] };
+
+      return { files: await searchFilesByName({ userId, query }) };
+    },
+  );
+
   fastify.get<{ Params: FileParams }>(
     "/files/:id/download",
     async (request, reply) => {
