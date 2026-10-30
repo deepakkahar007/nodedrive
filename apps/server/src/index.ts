@@ -1,6 +1,7 @@
 import Fastify, { type FastifyServerOptions } from "fastify";
 import { randomUUID } from "node:crypto";
 import { checkDatabaseConnection } from "@repo/drizzle";
+import { checkRedisConnection } from "@repo/node-redis";
 import { checkStorageConnection } from "@repo/storage";
 import { getLoggerConfig } from "./config/logger";
 import corsPlugin from "./plugins/cors";
@@ -9,6 +10,7 @@ import authPlugin from "./plugins/auth";
 import fileRoute from "./routes/fileRoute";
 import folderRoute from "./routes/folderRoute";
 import healthRoutes from "./routes/healthRoute";
+import notificationRoute from "./routes/notificationRoute";
 import organizationRoute from "./routes/organizationRoute";
 import uploadRoute from "./routes/uploadRoute";
 
@@ -30,6 +32,7 @@ export async function buildApp(options: FastifyServerOptions = {}) {
   await fastify.register(uploadRoute);
   await fastify.register(fileRoute);
   await fastify.register(folderRoute);
+  await fastify.register(notificationRoute);
 
   return fastify;
 }
@@ -45,11 +48,12 @@ function errorMessage(err: unknown): string {
   return String(err);
 }
 
-// check postgres and minio connections
+// check postgres, minio and redis connections
 async function checkServices(): Promise<void> {
   const checks = {
     postgres: checkDatabaseConnection,
     minio: checkStorageConnection,
+    redis: checkRedisConnection,
   };
 
   const results = await Promise.allSettled(
@@ -76,7 +80,7 @@ const start = async () => {
 
   try {
     await checkServices();
-    app.log.info("Postgres and MinIO connection checks passed");
+    app.log.info("Postgres, MinIO and Redis connection checks passed");
 
     const port = Number(process.env.PORT) || 3001;
     const address = await app.listen({ port, host: "0.0.0.0" });

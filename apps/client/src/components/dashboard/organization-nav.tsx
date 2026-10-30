@@ -12,6 +12,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import type { OrganizationSummary } from "@/lib/organization";
 import { isDashboardPathActive } from "@/lib/routes";
@@ -25,6 +26,7 @@ export function OrganizationNav({
   organizations: OrganizationSummary[];
 }) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
   return (
     <SidebarGroup>
@@ -37,6 +39,7 @@ export function OrganizationNav({
               isActive={pathname === "/dashboard/organization"}
               tooltip="All organizations"
               className={itemClassName}
+              onClick={() => setOpenMobile(false)}
             >
               <Building2 aria-hidden="true" />
               <span>All organizations</span>
@@ -56,6 +59,7 @@ export function OrganizationNav({
                 tooltip={organization.name}
                 className={itemClassName}
                 onClick={() => {
+                  setOpenMobile(false);
                   void setActiveOrganization({
                     organizationId: organization.id,
                   });

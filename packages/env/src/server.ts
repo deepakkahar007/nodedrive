@@ -24,6 +24,7 @@ export const serverEnv = createEnv({
     BETTER_AUTH_SECRET: z.string(),
     BETTER_AUTH_URL: z.string(),
     CLIENT_URL: z.string(),
+    REDIS_URL: z.string(),
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
     S3_ENDPOINT: z.string().url().optional(),

@@ -8,6 +8,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { dashboardNavGroups } from "@/lib/dashboard-nav";
 import type { OrganizationSummary } from "@/lib/organization";
@@ -20,6 +21,7 @@ export function SidebarNav({
   organizations: OrganizationSummary[];
 }) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
   return (
     <nav aria-label="Drive">
@@ -39,6 +41,7 @@ export function SidebarNav({
                       aria-current={active ? "page" : undefined}
                       tooltip={item.title}
                       className="h-10 gap-3 rounded-lg px-3 [&_svg]:size-5 data-active:bg-sidebar-active data-active:text-sidebar-active-foreground"
+                      onClick={() => setOpenMobile(false)}
                     >
                       <Icon aria-hidden="true" />
                       <span>{item.title}</span>

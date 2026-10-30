@@ -1,12 +1,15 @@
 import {
   and,
+  asc,
   desc,
   eq,
+  gt,
   ilike,
   inArray,
   isNotNull,
   isNull,
   or,
+  type SQLWrapper,
   sql,
 } from "drizzle-orm";
 import { db } from "../index";
@@ -540,4 +543,68 @@ export async function shareFileWithEmail({
   if (inserted.length === 0) return { error: "already-shared" };
 
   return { sharedWith: target };
+}
+
+export type ShareNotification = {
+  id: string;
+  fileId: string;
+  fileName: string;
+  sharedBy: string;
+  createdAt: string;
+};
+
+const SHARE_PAGE_SIZE = 50;
+const CURSOR_FORMAT = 'YYYY-MM-DD"T"HH24:MI:SS.US';
+
+/** Text cursor from the DB, so timestamps never round-trip through JS dates. */
+const cursorText = (value: SQLWrapper) =>
+  sql<string>`to_char(${value}, ${CURSOR_FORMAT})`;
+
+/**
+ * Shares for a user newer than `since`, oldest first. With no cursor, returns
+ * no shares and a cursor for now, so a first visit doesn't replay old shares.
+ */
+export async function listSharesSince({
+  userId,
+  since,
+}: {
+  userId: string;
+  since: string | null;
+}): Promise<{ shares: ShareNotification[]; cursor: string; more: boolean }> {
+  if (!since) {
+    const [now] = await db.execute<{ cursor: string }>(
+      sql`select to_char(now(), ${CURSOR_FORMAT}) as cursor`,
+    );
+    return { shares: [], cursor: now?.cursor ?? "", more: false };
+  }
+
+  const rows = await db
+    .select({
+      id: FileSharesTable.id,
+      fileId: FilesTable.id,
+      fileName: FilesTable.originalName,
+      sharedBy: user.name,
+      isDeleted: FilesTable.isDeleted,
+      createdAt: cursorText(FileSharesTable.createdAt),
+    })
+    .from(FileSharesTable)
+    .innerJoin(FilesTable, eq(FilesTable.id, FileSharesTable.file_id))
+    .innerJoin(user, eq(user.id, FilesTable.user_id))
+    .where(
+      and(
+        eq(FileSharesTable.shared_with_user_id, userId),
+        gt(FileSharesTable.createdAt, sql`${since}::timestamp`),
+      ),
+    )
+    .orderBy(asc(FileSharesTable.createdAt))
+    .limit(SHARE_PAGE_SIZE);
+
+  return {
+    // Deleted rows still move the cursor, so they can't stall the page.
+    shares: rows
+      .filter((row) => !row.isDeleted)
+      .map(({ isDeleted: _isDeleted, ...share }) => share),
+    cursor: rows.at(-1)?.createdAt ?? since,
+    more: rows.length === SHARE_PAGE_SIZE,
+  };
 }

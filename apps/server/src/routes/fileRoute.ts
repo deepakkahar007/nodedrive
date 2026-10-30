@@ -6,6 +6,7 @@ import {
   shareFileWithEmail,
   updateFileForUser,
 } from "@repo/drizzle";
+import { redis, shareChannel } from "@repo/node-redis";
 import { getPresignedDownloadUrl } from "@repo/storage";
 import { isUuid } from "../lib/uuid";
 
@@ -124,6 +125,11 @@ export default async function fileRoute(fastify: FastifyInstance) {
               .send({ message: "This file is already shared with that user" });
         }
       }
+
+      // The DB is the source of truth; a missed publish is caught on the next connect.
+      redis
+        .publish(shareChannel(result.sharedWith.id), request.params.id)
+        .catch((error) => request.log.error(error));
 
       return { sharedWith: result.sharedWith };
     },

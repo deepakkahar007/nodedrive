@@ -22,13 +22,13 @@ export function FileTable({
   currentFolderId?: string | null;
 }) {
   const gridColumns = showSource
-    ? "md:grid-cols-[minmax(0,1fr)_7rem_8rem_9rem_5rem_2.5rem]"
-    : "md:grid-cols-[minmax(0,1fr)_7rem_9rem_5rem_2.5rem]";
+    ? "lg:grid-cols-[minmax(0,1fr)_7rem_8rem_9rem_5rem_2.5rem]"
+    : "lg:grid-cols-[minmax(0,1fr)_7rem_9rem_5rem_2.5rem]";
 
   return (
     <div className="overflow-hidden rounded-xl border">
       <div
-        className={`hidden ${gridColumns} items-center gap-3 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground md:grid`}
+        className={`hidden ${gridColumns} items-center gap-3 border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground lg:grid`}
       >
         <span>Name</span>
         <span>Type</span>
@@ -70,25 +70,25 @@ export function FileTable({
                       />
                     ) : null}
                   </p>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground md:hidden">
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground lg:hidden">
                     {type}
                     {showSource ? ` · ${source}` : ""} · {date} · {size}
                   </p>
                 </div>
               </div>
 
-              <span className="hidden truncate text-sm text-muted-foreground md:block">
+              <span className="hidden truncate text-sm text-muted-foreground lg:block">
                 {type}
               </span>
               {showSource ? (
-                <span className="hidden truncate text-sm text-muted-foreground md:block">
+                <span className="hidden truncate text-sm text-muted-foreground lg:block">
                   {source}
                 </span>
               ) : null}
-              <span className="hidden truncate text-sm text-muted-foreground md:block">
+              <span className="hidden truncate text-sm text-muted-foreground lg:block">
                 {date}
               </span>
-              <span className="hidden text-right text-sm tabular-nums text-muted-foreground md:block">
+              <span className="hidden text-right text-sm tabular-nums text-muted-foreground lg:block">
                 {size}
               </span>
 

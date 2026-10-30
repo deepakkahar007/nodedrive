@@ -35,7 +35,7 @@ export default function DashboardLoading() {
       <div className="grid gap-3">
         <Skeleton className="h-4 w-24" />
         <div className="overflow-hidden rounded-xl border">
-          <div className="hidden grid-cols-[minmax(0,1fr)_7rem_9rem_5rem_2.5rem] items-center gap-3 border-b bg-muted/40 px-3 py-2 md:grid">
+          <div className="hidden grid-cols-[minmax(0,1fr)_7rem_9rem_5rem_2.5rem] items-center gap-3 border-b bg-muted/40 px-3 py-2 lg:grid">
             <Skeleton className="h-3 w-10" />
             <Skeleton className="h-3 w-8" />
             <Skeleton className="h-3 w-20" />
@@ -48,11 +48,11 @@ export default function DashboardLoading() {
                 <Skeleton className="size-9 shrink-0 rounded-lg" />
                 <div className="grid min-w-0 flex-1 gap-1.5">
                   <Skeleton className="h-3.5 w-48 max-w-full" />
-                  <Skeleton className="h-3 w-24 md:hidden" />
+                  <Skeleton className="h-3 w-24 lg:hidden" />
                 </div>
-                <Skeleton className="hidden h-3 w-12 md:block" />
-                <Skeleton className="hidden h-3 w-20 md:block" />
-                <Skeleton className="hidden h-3 w-10 md:block" />
+                <Skeleton className="hidden h-3 w-12 lg:block" />
+                <Skeleton className="hidden h-3 w-20 lg:block" />
+                <Skeleton className="hidden h-3 w-10 lg:block" />
                 <Skeleton className="size-7 shrink-0 rounded-lg" />
               </div>
             ))}

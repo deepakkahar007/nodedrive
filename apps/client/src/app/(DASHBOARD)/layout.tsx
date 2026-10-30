@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { AppHeader } from "@/components/dashboard/app-header";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { ShareNotifications } from "@/components/dashboard/share-notifications";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { requireSession } from "@/lib/session";
@@ -25,6 +26,7 @@ export default async function DashboardLayout({
   return (
     <TooltipProvider>
       <SidebarProvider>
+        <ShareNotifications userId={session.user.id} />
         <AppSidebar organizations={organizations} />
         <SidebarInset>
           <AppHeader

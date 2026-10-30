@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --watch src/index.ts"
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun --packages external"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -19,6 +20,7 @@
     "@repo/auth": "workspace:*",
     "@repo/drizzle": "workspace:*",
     "@repo/env": "workspace:*",
+    "@repo/node-redis": "workspace:*",
     "@repo/storage": "workspace:*",
     "fastify": "^5.12.5",
     "fastify-plugin": "^6.0.1"

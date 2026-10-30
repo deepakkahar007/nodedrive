@@ -48,7 +48,7 @@ export function SearchBar() {
       <form
         ref={formRef}
         action="/dashboard/search"
-        className="relative w-full"
+        className="relative min-w-0 flex-1"
       >
         <Search
           aria-hidden="true"

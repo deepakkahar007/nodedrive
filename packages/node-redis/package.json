@@ -1,0 +1,19 @@
+{
+  "name": "@repo/node-redis",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "@repo/env": "workspace:*",
+    "redis": "^6.3.1"
+  }
+}
