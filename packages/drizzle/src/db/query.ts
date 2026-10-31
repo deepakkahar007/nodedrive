@@ -69,7 +69,7 @@ export type CreateFileInput = {
   mimeType: string;
 };
 
-/** Insert uploaded file records. */
+// Insert uploaded file records.
 export async function createFiles(inputs: CreateFileInput[]) {
   if (inputs.length === 0) return [];
 
@@ -345,8 +345,7 @@ type MoveFileInput = {
 };
 
 export type MoveFileResult =
-  | { file: FileListItem }
-  | { error: "file-not-found" | "folder-not-found" };
+  { file: FileListItem } | { error: "file-not-found" | "folder-not-found" };
 
 /** Move an accessible file into a folder the user owns, or to the root. */
 export async function moveFileToFolder({
@@ -368,11 +367,7 @@ export async function moveFileToFolder({
     .update(FilesTable)
     .set({ folder_id: folderId, updatedAt: new Date() })
     .where(
-      and(
-        eq(FilesTable.id, fileId),
-        eq(FilesTable.isDeleted, false),
-        access,
-      ),
+      and(eq(FilesTable.id, fileId), eq(FilesTable.isDeleted, false), access),
     )
     .returning(fileColumns);
 
@@ -495,6 +490,42 @@ export async function updateFileForUser({
     .returning(fileColumns);
 
   return file ?? null;
+}
+
+/** A binned file the user can manage, or null. */
+export async function getBinFileForUser({ fileId, userId }: FileIdInput) {
+  const access = accessibleFiles(userId);
+
+  if (!access) return null;
+
+  const [file] = await db
+    .select({ id: FilesTable.id, storageKey: FilesTable.storage_url })
+    .from(FilesTable)
+    .where(
+      and(eq(FilesTable.id, fileId), eq(FilesTable.isDeleted, true), access),
+    )
+    .limit(1);
+
+  return file ?? null;
+}
+
+/** Deletes a binned file row. Its file_shares rows cascade. */
+export async function deleteFilePermanently({
+  fileId,
+  userId,
+}: FileIdInput): Promise<boolean> {
+  const access = accessibleFiles(userId);
+
+  if (!access) return false;
+
+  const deleted = await db
+    .delete(FilesTable)
+    .where(
+      and(eq(FilesTable.id, fileId), eq(FilesTable.isDeleted, true), access),
+    )
+    .returning({ id: FilesTable.id });
+
+  return deleted.length > 0;
 }
 
 type ShareFileInput = { fileId: string; userId: string; email: string };

@@ -1,4 +1,5 @@
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
@@ -66,6 +67,13 @@ export async function getObjectMetadata(key: string): Promise<ObjectMetadata> {
     contentType: result.ContentType,
     etag: result.ETag,
   };
+}
+
+/** Removes a stored object. Missing keys are a no-op on S3. */
+export async function deleteStoredObject(key: string): Promise<void> {
+  await s3Client.send(
+    new DeleteObjectCommand({ Bucket: bucketName, Key: key }),
+  );
 }
 
 /** Startup check: throws if S3/MinIO is unreachable or the bucket is missing. */

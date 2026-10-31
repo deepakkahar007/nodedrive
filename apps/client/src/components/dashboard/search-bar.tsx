@@ -5,7 +5,12 @@ import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent } from "@/components/ui/popover";
-import { formatBytes, formatFileType, getFileIcon } from "@/lib/file-display";
+import {
+  formatBytes,
+  formatFileType,
+  getFileIcon,
+  getFileTone,
+} from "@/lib/file-display";
 import { searchFiles } from "@/lib/files";
 
 export function SearchBar() {
@@ -97,7 +102,7 @@ export function SearchBar() {
                 >
                   <span
                     aria-hidden="true"
-                    className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"
+                    className={`grid size-9 shrink-0 place-items-center rounded-lg ${getFileTone(Icon)}`}
                   >
                     <Icon className="size-4" />
                   </span>

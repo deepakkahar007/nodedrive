@@ -75,7 +75,7 @@ export default async function FolderPage({
               <FolderOpen aria-hidden="true" className="size-5" />
             </span>
             <div className="min-w-0">
-              <h1 className="truncate text-2xl font-semibold tracking-tight">
+              <h1 className="truncate font-heading text-2xl font-medium tracking-[-0.03em]">
                 {folder.name}
               </h1>
               <p className="text-sm text-muted-foreground">

@@ -42,3 +42,9 @@ export function updateFile(fileId: string, input: FileUpdate) {
     body: JSON.stringify(input),
   });
 }
+
+export function deleteFilePermanently(fileId: string) {
+  return apiJson<{ deleted: boolean }>(`/files/${encodeURIComponent(fileId)}`, {
+    method: "DELETE",
+  });
+}

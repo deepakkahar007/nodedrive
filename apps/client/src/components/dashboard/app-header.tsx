@@ -16,9 +16,7 @@ export function AppHeader({ user }: { user: DashboardUser }) {
           className="hidden items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex md:hidden"
         >
           <BrandMark className="size-6 text-sidebar-primary" />
-          <span className="font-(family-name:--font-poppins text-base font-medium">
-            NodeDrive
-          </span>
+          <span className="font-heading text-base font-medium">NodeDrive</span>
         </Link>
       </div>
 

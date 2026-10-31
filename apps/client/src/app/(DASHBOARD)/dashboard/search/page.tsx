@@ -11,7 +11,9 @@ export default async function SearchPage({
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Search</h1>
+        <h1 className="font-heading text-2xl font-medium tracking-[-0.03em]">
+          Search
+        </h1>
         <p className="text-sm text-muted-foreground">
           {query ? `Results for “${query}”` : "Search your files by name."}
         </p>

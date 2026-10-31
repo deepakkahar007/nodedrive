@@ -20,6 +20,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { getFileDownload, updateFile } from "@/lib/files";
+import { DeleteFileDialog } from "./delete-file-dialog";
 import { MoveFileDialog } from "./move-file-dialog";
 import { ShareFileDialog } from "./share-file-dialog";
 
@@ -49,6 +50,7 @@ export function FileMenu({
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,15 +124,29 @@ export function FileMenu({
 
           {canManage ? (
             inBin ? (
-              <button
-                type="button"
-                className={itemClassName}
-                disabled={busy}
-                onClick={() => setTrashed(false)}
-              >
-                <RotateCcw aria-hidden="true" />
-                Restore
-              </button>
+              <>
+                <button
+                  type="button"
+                  className={itemClassName}
+                  disabled={busy}
+                  onClick={() => setTrashed(false)}
+                >
+                  <RotateCcw aria-hidden="true" />
+                  Restore
+                </button>
+                <button
+                  type="button"
+                  className={`${itemClassName} text-destructive`}
+                  disabled={busy}
+                  onClick={() => {
+                    setOpen(false);
+                    setDeleteOpen(true);
+                  }}
+                >
+                  <Trash2 aria-hidden="true" />
+                  Delete permanently
+                </button>
+              </>
             ) : (
               <>
                 {folders.length > 0 || currentFolderId ? (
@@ -207,6 +223,13 @@ export function FileMenu({
         folders={folders}
         open={moveOpen}
         onOpenChange={setMoveOpen}
+      />
+
+      <DeleteFileDialog
+        fileId={fileId}
+        fileName={fileName}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
       />
     </>
   );

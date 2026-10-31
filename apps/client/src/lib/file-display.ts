@@ -58,6 +58,29 @@ export function getFileIcon(extension: string, mimeType: string): LucideIcon {
   return FileText;
 }
 
+const fileTones = new Map<LucideIcon, string>([
+  [
+    FileImage,
+    "bg-[#eeeaff] text-[#6957d9] dark:bg-[#6957d9]/20 dark:text-[#b9adff]",
+  ],
+  [
+    FileVideo,
+    "bg-[#eeeaff] text-[#6957d9] dark:bg-[#6957d9]/20 dark:text-[#b9adff]",
+  ],
+  [
+    FileSpreadsheet,
+    "bg-[#e2f5e9] text-[#25835a] dark:bg-[#25835a]/20 dark:text-[#7fd6a4]",
+  ],
+  [
+    FileText,
+    "bg-[#fff0ed] text-[#df685d] dark:bg-[#df685d]/20 dark:text-[#ffa59c]",
+  ],
+]);
+
+export function getFileTone(icon: LucideIcon): string {
+  return fileTones.get(icon) ?? "bg-accent text-accent-foreground";
+}
+
 export function formatFileType(extension: string, mimeType: string): string {
   if (extension) return extension.toUpperCase();
 

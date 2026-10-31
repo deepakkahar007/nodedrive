@@ -5,6 +5,7 @@ import {
   formatFileDate,
   formatFileType,
   getFileIcon,
+  getFileTone,
 } from "@/lib/file-display";
 import { FileMenu } from "./file-menu";
 
@@ -56,7 +57,7 @@ export function FileTable({
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden="true"
-                  className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"
+                  className={`grid size-9 shrink-0 place-items-center rounded-lg ${getFileTone(Icon)}`}
                 >
                   <Icon className="size-4" />
                 </span>
