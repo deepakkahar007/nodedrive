@@ -1,12 +1,14 @@
 import type { FastifyInstance } from "fastify";
 import {
+  deleteFilePermanently,
+  getBinFileForUser,
   getFileForUser,
   moveFileToFolder,
   searchFilesByName,
   shareFileWithEmail,
   updateFileForUser,
 } from "@repo/drizzle";
-import { getPresignedDownloadUrl } from "@repo/storage";
+import { deleteStoredObject, getPresignedDownloadUrl } from "@repo/storage";
 import { isUuid } from "../lib/uuid";
 
 type FileParams = { id: string };
@@ -200,6 +202,44 @@ export default async function fileRoute(fastify: FastifyInstance) {
       }
 
       return { file };
+    },
+  );
+
+  fastify.delete<{ Params: FileParams }>(
+    "/files/:id",
+    async (request, reply) => {
+      const userId = request.user?.id;
+
+      if (!userId) {
+        return reply.code(401).send({ message: "Unauthorized" });
+      }
+
+      if (isInvalidId(request.params.id)) {
+        return reply.code(400).send({ message: "Invalid file id" });
+      }
+
+      const file = await getBinFileForUser({
+        fileId: request.params.id,
+        userId,
+      });
+
+      if (!file) {
+        return reply.code(404).send({ message: "File not found in bin" });
+      }
+
+      // Storage first: if it fails, the row stays in the bin for a retry.
+      await deleteStoredObject(file.storageKey);
+
+      const deleted = await deleteFilePermanently({
+        fileId: request.params.id,
+        userId,
+      });
+
+      if (!deleted) {
+        return reply.code(404).send({ message: "File not found in bin" });
+      }
+
+      return { deleted: true };
     },
   );
 }

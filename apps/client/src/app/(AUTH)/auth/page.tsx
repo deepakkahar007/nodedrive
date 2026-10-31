@@ -16,7 +16,7 @@ function WorkspacePreview() {
     <div
       role="img"
       aria-label="Shared NodeDrive workspace with folders and team files"
-      className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 sm:p-5"
+      className="rounded-2xl border border-white/10 bg-white/6 p-4 sm:p-5"
     >
       <div className="flex items-center justify-between border-b border-white/10 pb-4">
         <div className="flex items-center gap-3">
@@ -40,7 +40,7 @@ function WorkspacePreview() {
             key={name}
             className="flex items-center gap-3 rounded-xl px-2 py-3"
           >
-            <div className="flex size-8 items-center justify-center rounded-lg bg-white/[0.08] text-[#b8f4d5]">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-white/8 text-[#b8f4d5]">
               {index === 0 ? (
                 <Folder className="size-4" />
               ) : (
@@ -81,7 +81,7 @@ function WorkspacePreview() {
 export default function AuthPage() {
   return (
     <main className="flex min-h-screen flex-col bg-[#f6f8fc] text-[#17233d] dark:bg-[#101827] dark:text-[#eef3fc]">
-      <header className="mx-auto flex h-[76px] w-full max-w-7xl items-center justify-between px-5 sm:px-8">
+      <header className="mx-auto flex h-19 w-full max-w-7xl items-center justify-between px-5 sm:px-8">
         <Link
           href="/"
           className="flex items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3d63f5]"
@@ -96,13 +96,13 @@ export default function AuthPage() {
       </header>
 
       <div className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-8 px-5 py-6 sm:px-8 sm:py-10 lg:grid-cols-2 lg:gap-14">
-        <section className="flex flex-col justify-between gap-9 overflow-hidden rounded-[28px] bg-[#17233d] p-6 text-white sm:rounded-[32px] sm:p-10 lg:min-h-[620px] dark:bg-[#18243a]">
+        <section className="flex flex-col justify-between gap-9 overflow-hidden rounded-[28px] bg-[#17233d] p-6 text-white sm:rounded-[32px] sm:p-10 lg:min-h-155 dark:bg-[#18243a]">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-white/75">
               <span className="size-1.5 rounded-full bg-[#b8f4d5]" />
               Shared work, in sync
             </p>
-            <h1 className="mt-8 max-w-lg font-(family-name:--font-poppins) text-3xl leading-[1.1] font-medium tracking-[-0.05em] sm:text-4xl lg:text-[2.8rem]">
+            <h1 className="mt-8 max-w-lg font-(family-name:--font-poppins) text-3xl leading-[1.1] font-medium tracking-tighter sm:text-4xl lg:text-[2.8rem]">
               Good work starts in one shared place.
             </h1>
             <p className="mt-4 max-w-md text-sm leading-6 text-[#c0cadd] sm:text-base sm:leading-7">
@@ -120,7 +120,7 @@ export default function AuthPage() {
         </section>
 
         <section className="flex items-center justify-center lg:py-8">
-          <Card className="w-full max-w-[440px] rounded-[26px] border border-[#e6ebf2] bg-white py-2 shadow-[0_24px_70px_-45px_rgba(23,35,61,0.35)] dark:border-[#2a364a] dark:bg-[#151f31]">
+          <Card className="w-full max-w-110 rounded-[26px] border border-[#e6ebf2] bg-white py-2 shadow-[0_24px_70px_-45px_rgba(23,35,61,0.35)] dark:border-[#2a364a] dark:bg-[#151f31]">
             <CardHeader className="gap-2 px-6 pt-6 sm:px-8 sm:pt-8">
               <p className="text-sm font-medium text-[#3d63f5] dark:text-[#9db2ff]">
                 Your workspace awaits
@@ -139,15 +139,7 @@ export default function AuthPage() {
         </section>
       </div>
 
-      <footer className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 text-xs text-[#8995a7] sm:px-8 dark:text-[#8795ad]">
-        <span>© {new Date().getFullYear()} NodeDrive</span>
-        <Link
-          href="/"
-          className="rounded-sm transition-colors hover:text-[#17233d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#3d63f5] dark:hover:text-white"
-        >
-          Back to home
-        </Link>
-      </footer>
+      <div className="my-8" />
     </main>
   );
 }
