@@ -390,7 +390,7 @@ export function UploadDialog({
 
                 <PopoverContent
                   align="start"
-                  className="w-[var(--anchor-width)] gap-0 p-1"
+                  className="w-(--anchor-width) gap-0 p-1"
                 >
                   <div className="flex flex-col">
                     <button
