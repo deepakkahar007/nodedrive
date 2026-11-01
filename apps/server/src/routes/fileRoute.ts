@@ -175,6 +175,12 @@ export default async function fileRoute(fastify: FastifyInstance) {
         });
 
         if ("error" in result) {
+          if (result.error === "name_collision") {
+            return reply
+              .code(409)
+              .send({ message: "A file with that name already exists in this folder" });
+          }
+
           return reply.code(404).send({
             message:
               result.error === "folder-not-found"
@@ -194,18 +200,22 @@ export default async function fileRoute(fastify: FastifyInstance) {
         return reply.code(400).send({ message: "Invalid update" });
       }
 
-      const file = await updateFileForUser({
+      const result = await updateFileForUser({
         fileId: request.params.id,
         userId,
         starred: body.starred,
         trashed: body.trashed,
       });
 
-      if (!file) {
-        return reply.code(404).send({ message: "File not found" });
+      if ("error" in result) {
+        return result.error === "name_collision"
+          ? reply
+              .code(409)
+              .send({ message: "A file with that name already exists in this folder" })
+          : reply.code(404).send({ message: "File not found" });
       }
 
-      return { file };
+      return { file: result.file };
     },
   );
 

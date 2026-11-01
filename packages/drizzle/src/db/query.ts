@@ -57,40 +57,6 @@ export async function listUserOrganizations(
   }));
 }
 
-export type CreateFileInput = {
-  userId: string;
-  organizationId?: string | null;
-  folderId?: string | null;
-  storageKey: string;
-  name: string;
-  originalName: string;
-  extension: string;
-  size: number;
-  mimeType: string;
-};
-
-// Insert uploaded file records.
-export async function createFiles(inputs: CreateFileInput[]) {
-  if (inputs.length === 0) return [];
-
-  return db
-    .insert(FilesTable)
-    .values(
-      inputs.map((input) => ({
-        user_id: input.userId,
-        organization_id: input.organizationId ?? null,
-        folder_id: input.folderId ?? null,
-        storage_url: input.storageKey,
-        name: input.name,
-        originalName: input.originalName,
-        extension: input.extension,
-        size: String(input.size),
-        mime_type: input.mimeType,
-      })),
-    )
-    .returning();
-}
-
 export type FolderListItem = {
   id: string;
   name: string;
@@ -98,7 +64,7 @@ export type FolderListItem = {
   updatedAt: Date;
 };
 
-const folderColumns = {
+export const folderColumns = {
   id: FolderTable.id,
   name: FolderTable.name,
   parentId: FolderTable.parent_id,
@@ -118,31 +84,6 @@ export async function listFolders({
       and(eq(FolderTable.user_id, userId), eq(FolderTable.isDeleted, false)),
     )
     .orderBy(FolderTable.name);
-}
-
-type CreateFolderInput = {
-  userId: string;
-  name: string;
-  parentId?: string | null;
-};
-
-export async function createFolder({
-  userId,
-  name,
-  parentId,
-}: CreateFolderInput): Promise<FolderListItem> {
-  const [folder] = await db
-    .insert(FolderTable)
-    .values({
-      user_id: userId,
-      name,
-      parent_id: parentId ?? null,
-    })
-    .returning(folderColumns);
-
-  if (!folder) throw new Error("Folder insert returned no row");
-
-  return folder;
 }
 
 type FolderIdInput = { folderId: string; userId: string };
@@ -196,7 +137,7 @@ export type FileListItem = {
   originalName: string;
   extension: string;
   mimeType: string;
-  size: string;
+  size: number;
   updatedAt: Date;
   isStarred: boolean;
   folderId: string | null;
@@ -205,7 +146,7 @@ export type FileListItem = {
   isSharedWithMe: boolean;
 };
 
-const fileColumns = {
+export const fileColumns = {
   id: FilesTable.id,
   name: FilesTable.name,
   originalName: FilesTable.originalName,
@@ -219,7 +160,7 @@ const fileColumns = {
 };
 
 /** Files owned by the user plus files in organizations they belong to. */
-function accessibleFiles(userId: string) {
+export function accessibleFiles(userId: string) {
   const organizationIds = db
     .select({ id: member.organizationId })
     .from(member)
@@ -338,44 +279,6 @@ export async function listFolderFiles({
   }));
 }
 
-type MoveFileInput = {
-  fileId: string;
-  userId: string;
-  folderId: string | null;
-};
-
-export type MoveFileResult =
-  { file: FileListItem } | { error: "file-not-found" | "folder-not-found" };
-
-/** Move an accessible file into a folder the user owns, or to the root. */
-export async function moveFileToFolder({
-  fileId,
-  userId,
-  folderId,
-}: MoveFileInput): Promise<MoveFileResult> {
-  if (folderId) {
-    const folder = await getFolderForUser({ folderId, userId });
-
-    if (!folder) return { error: "folder-not-found" };
-  }
-
-  const access = accessibleFiles(userId);
-
-  if (!access) return { error: "file-not-found" };
-
-  const [file] = await db
-    .update(FilesTable)
-    .set({ folder_id: folderId, updatedAt: new Date() })
-    .where(
-      and(eq(FilesTable.id, fileId), eq(FilesTable.isDeleted, false), access),
-    )
-    .returning(fileColumns);
-
-  if (!file) return { error: "file-not-found" };
-
-  return { file: { ...file, organizationName: null, isSharedWithMe: false } };
-}
-
 type OrganizationFilesInput = { organizationId: string; userId: string };
 
 /** Files belonging to one organization, scoped to its members. */
@@ -426,7 +329,7 @@ export type FileSearchItem = {
   originalName: string;
   extension: string;
   mimeType: string;
-  size: string;
+  size: number;
 };
 
 type SearchFilesInput = { userId: string; query: string };
@@ -456,40 +359,6 @@ export async function searchFilesByName({
     )
     .orderBy(desc(FilesTable.updatedAt))
     .limit(10);
-}
-
-type UpdateFileInput = {
-  fileId: string;
-  userId: string;
-  starred?: boolean;
-  trashed?: boolean;
-};
-
-export async function updateFileForUser({
-  fileId,
-  userId,
-  starred,
-  trashed,
-}: UpdateFileInput) {
-  const access = accessibleFiles(userId);
-
-  if (!access) return null;
-
-  const [file] = await db
-    .update(FilesTable)
-    .set({
-      ...(starred !== undefined ? { is_starred: starred } : {}),
-      ...(trashed !== undefined
-        ? {
-            isDeleted: trashed,
-            deletedAt: trashed ? new Date() : null,
-          }
-        : {}),
-    })
-    .where(and(eq(FilesTable.id, fileId), access))
-    .returning(fileColumns);
-
-  return file ?? null;
 }
 
 /** A binned file the user can manage, or null. */

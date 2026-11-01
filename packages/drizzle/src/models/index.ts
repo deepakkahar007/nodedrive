@@ -11,6 +11,14 @@ import {
 } from "./AuthTable";
 
 import { FolderTable } from "./FolderTable";
+import {
+  accountSyncState,
+  changes,
+  devices,
+  fileRevisions,
+  syncLogs,
+  uploadSessions,
+} from "./SyncTables";
 
 export {
   FilesTable,
@@ -23,4 +31,10 @@ export {
   organization,
   member,
   invitation,
+  accountSyncState,
+  changes,
+  devices,
+  fileRevisions,
+  syncLogs,
+  uploadSessions,
 };
