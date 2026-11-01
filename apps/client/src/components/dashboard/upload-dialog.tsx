@@ -30,11 +30,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { formatBytes } from "@/lib/file-display";
-import {
-  completeUploads,
-  presignUploads,
-  uploadToStorage,
-} from "@/lib/uploads";
+import { type FileStatus, uploadFiles } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
 
 type UploadOrganization = {
@@ -44,8 +40,6 @@ type UploadOrganization = {
   logo?: string | null;
   access: "owned" | "shared";
 };
-
-type FileStatus = "uploading" | "done" | "error";
 
 const optionClassName =
   "flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-sm outline-none transition-colors hover:bg-muted focus-visible:bg-muted aria-pressed:bg-muted";
@@ -160,82 +154,16 @@ export function UploadDialog({
     setUploading(true);
     resetUploadState();
 
-    const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
-    const uploaded: { file: File; key: string }[] = [];
-    const failed: File[] = [];
-    let settledBytes = 0;
-
     try {
-      const presigned = await presignUploads(
-        files,
-        folderId ? null : organizationId,
+      const { uploaded, failed } = await uploadFiles(files, {
+        organizationId: folderId ? null : organizationId,
         folderId,
-      );
-
-      for (const [index, file] of files.entries()) {
-        const target = presigned[index];
-
-        if (!target) {
-          failed.push(file);
-          setStatuses((current) => ({
-            ...current,
-            [fileKey(file)]: "error",
-          }));
-          continue;
-        }
-
-        setStatuses((current) => ({
-          ...current,
-          [fileKey(file)]: "uploading",
-        }));
-
-        try {
-          await uploadToStorage(target.url, file, target.headers, (loaded) => {
-            const loadedBytes = settledBytes + Math.min(loaded, file.size);
-
-            setProgress(
-              totalBytes > 0
-                ? Math.round((loadedBytes / totalBytes) * 100)
-                : 100,
-            );
-          });
-
-          uploaded.push({ file, key: target.key });
-          setStatuses((current) => ({
-            ...current,
-            [fileKey(file)]: "done",
-          }));
-        } catch (uploadError) {
-          failed.push(file);
-          setStatuses((current) => ({
-            ...current,
-            [fileKey(file)]: "error",
-          }));
-          setError(
-            uploadError instanceof Error
-              ? uploadError.message
-              : `Could not upload ${file.name}`,
-          );
-        } finally {
-          settledBytes += file.size;
-          setProgress(
-            totalBytes > 0
-              ? Math.round((settledBytes / totalBytes) * 100)
-              : 100,
-          );
-        }
-      }
+        onStatus: (file, status) =>
+          setStatuses((current) => ({ ...current, [fileKey(file)]: status })),
+        onProgress: setProgress,
+      });
 
       if (uploaded.length > 0) {
-        await completeUploads(
-          uploaded.map(({ file, key }) => ({
-            key,
-            name: file.name,
-            mimeType: file.type || "application/octet-stream",
-          })),
-          folderId ? null : organizationId,
-          folderId,
-        );
         setCompletedCount(uploaded.length);
         router.refresh();
       }
@@ -390,7 +318,7 @@ export function UploadDialog({
 
                 <PopoverContent
                   align="start"
-                  className="w-[var(--anchor-width)] gap-0 p-1"
+                  className="w-(--anchor-width) gap-0 p-1"
                 >
                   <div className="flex flex-col">
                     <button

@@ -1,0 +1,23 @@
+{
+  "name": "@repo/sync-client",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {},
+  "devDependencies": {
+    "@types/bun": "latest",
+    "fake-indexeddb": "^6.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "@repo/sync-core": "workspace:*",
+    "@repo/sync-protocol": "workspace:*",
+    "dexie": "^4.0.0",
+    "hash-wasm": "^4.12.0"
+  }
+}

@@ -22,6 +22,8 @@
   "dependencies": {
     "@repo/env": "workspace:*",
     "drizzle-orm": "^1.0.0-rc.4",
-    "postgres": "^3.4.9"
+    "postgres": "^3.4.9",
+    "@repo/sync-core": "workspace:*",
+    "@repo/sync-protocol": "workspace:*"
   }
 }

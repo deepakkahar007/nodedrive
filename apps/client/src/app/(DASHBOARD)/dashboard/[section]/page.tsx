@@ -1,6 +1,7 @@
 import type { FileSection } from "@repo/drizzle";
 import { notFound } from "next/navigation";
 import { FilesView } from "@/components/dashboard/files-view";
+import { SyncPanel } from "@/components/sync/sync-panel";
 import { dashboardNavItems } from "@/lib/dashboard-nav";
 import { requireSession } from "@/lib/session";
 
@@ -51,12 +52,19 @@ export default async function DashboardSectionPage({
   }
 
   return (
-    <FilesView
-      userId={session.user.id}
-      section={details.section}
-      title={item.title}
-      description={details.description}
-      icon={item.icon}
-    />
+    <>
+      <FilesView
+        userId={session.user.id}
+        section={details.section}
+        title={item.title}
+        description={details.description}
+        icon={item.icon}
+      />
+      {section === "computers" ? (
+        <div className="mx-auto mt-6 w-full max-w-5xl">
+          <SyncPanel />
+        </div>
+      ) : null}
+    </>
   );
 }

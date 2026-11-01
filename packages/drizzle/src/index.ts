@@ -8,6 +8,9 @@ const client = postgres(serverEnv.DATABASE_URL);
 export const db = drizzle({ client, relations });
 
 export * from "./db/query";
+export * from "./db/writes";
+export * from "./db/sync";
+export * from "./db/seed";
 
 // database health check
 export async function checkDatabaseConnection(): Promise<void> {

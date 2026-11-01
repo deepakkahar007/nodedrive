@@ -12,6 +12,7 @@ import folderRoute from "./routes/folderRoute";
 import healthRoutes from "./routes/healthRoute";
 import notificationRoute from "./routes/notificationRoute";
 import organizationRoute from "./routes/organizationRoute";
+import syncRoute from "./routes/syncRoute";
 import uploadRoute from "./routes/uploadRoute";
 
 export async function buildApp(options: FastifyServerOptions = {}) {
@@ -33,6 +34,7 @@ export async function buildApp(options: FastifyServerOptions = {}) {
   await fastify.register(fileRoute);
   await fastify.register(folderRoute);
   await fastify.register(notificationRoute);
+  await fastify.register(syncRoute);
 
   return fastify;
 }

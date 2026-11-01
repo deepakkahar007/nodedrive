@@ -1,6 +1,7 @@
 import {
   type AnyPgColumn,
   index,
+  integer,
   pgTable,
   text,
   uuid,
@@ -25,6 +26,7 @@ export const FolderTable = pgTable(
       { onDelete: "cascade" },
     ),
     shared_with: varchar("shared_with").array(),
+    revision: integer("revision").notNull().default(1),
 
     createdAt,
     updatedAt,

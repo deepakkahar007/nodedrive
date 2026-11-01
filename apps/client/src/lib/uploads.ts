@@ -11,7 +11,7 @@ export type UploadedFile = {
   name: string;
   originalName: string;
   storage_url: string;
-  size: string;
+  size: number;
   mime_type: string;
 };
 
@@ -53,6 +53,71 @@ export async function completeUploads(
   });
 
   return data.files;
+}
+
+export type FileStatus = "uploading" | "done" | "error";
+
+type UploadOptions = {
+  organizationId: string | null;
+  folderId: string | null;
+  onStatus: (file: File, status: FileStatus) => void;
+  onProgress: (percent: number) => void;
+};
+
+export type UploadOutcome = { uploaded: File[]; failed: File[] };
+
+/** Presign, PUT each file, then record the ones that landed. */
+export async function uploadFiles(
+  files: File[],
+  { organizationId, folderId, onStatus, onProgress }: UploadOptions,
+): Promise<UploadOutcome> {
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+  const percent = (bytes: number) =>
+    totalBytes > 0 ? Math.round((bytes / totalBytes) * 100) : 100;
+  const presigned = await presignUploads(files, organizationId, folderId);
+  const uploaded: { file: File; key: string }[] = [];
+  const failed: File[] = [];
+  let settledBytes = 0;
+
+  for (const [index, file] of files.entries()) {
+    const target = presigned[index];
+
+    if (!target) {
+      failed.push(file);
+      onStatus(file, "error");
+      continue;
+    }
+
+    onStatus(file, "uploading");
+
+    try {
+      await uploadToStorage(target.url, file, target.headers, (loaded) =>
+        onProgress(percent(settledBytes + Math.min(loaded, file.size))),
+      );
+      uploaded.push({ file, key: target.key });
+      onStatus(file, "done");
+    } catch {
+      failed.push(file);
+      onStatus(file, "error");
+    } finally {
+      settledBytes += file.size;
+      onProgress(percent(settledBytes));
+    }
+  }
+
+  if (uploaded.length > 0) {
+    await completeUploads(
+      uploaded.map(({ file, key }) => ({
+        key,
+        name: file.name,
+        mimeType: file.type || "application/octet-stream",
+      })),
+      organizationId,
+      folderId,
+    );
+  }
+
+  return { uploaded: uploaded.map(({ file }) => file), failed };
 }
 
 /** Browser PUT with upload progress. Uses XHR because fetch cannot report it. */

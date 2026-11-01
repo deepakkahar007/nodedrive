@@ -59,7 +59,7 @@ const files = [
 
 function SiteHeader() {
   return (
-    <header className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8">
+    <header className="mx-auto flex h-19 max-w-7xl items-center justify-between px-5 sm:px-8">
       <Link
         href="/"
         className="flex items-center gap-2.5"
@@ -114,7 +114,7 @@ function DrivePreview() {
     <div
       role="img"
       aria-label="NodeDrive workspace showing shared folders and recent team files"
-      className="relative mx-auto w-full max-w-[620px] rounded-[28px] bg-[#dfe8ff] p-3 shadow-[0_32px_80px_-42px_rgba(35,68,146,0.42)] sm:p-5"
+      className="relative mx-auto w-full max-w-155 rounded-[28px] bg-[#dfe8ff] p-3 shadow-[0_32px_80px_-42px_rgba(35,68,146,0.42)] sm:p-5"
     >
       <div className="overflow-hidden rounded-[19px] border border-[#dce3ef] bg-white">
         <div className="flex h-11 items-center gap-1.5 border-b border-[#e9edf4] px-4">
@@ -126,8 +126,8 @@ function DrivePreview() {
           </span>
         </div>
 
-        <div className="flex min-h-[350px]">
-          <aside className="hidden w-[156px] shrink-0 border-r border-[#edf0f5] bg-[#fbfcfe] p-3 sm:block">
+        <div className="flex min-h-87.5">
+          <aside className="hidden w-39 shrink-0 border-r border-[#edf0f5] bg-[#fbfcfe] p-3 sm:block">
             <div className="mb-5 flex items-center gap-2 px-2 pt-1">
               <BrandMark className="size-5 text-[#3d63f5]" />
               <span className="text-[11px] font-semibold text-[#26334b]">

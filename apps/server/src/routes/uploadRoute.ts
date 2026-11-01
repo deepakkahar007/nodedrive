@@ -28,21 +28,9 @@ type CompleteBody = {
   folderId?: string | null;
   files?: CompleteFile[];
 };
-
-function splitFileName(fileName: string) {
-  const safeName = fileName.trim().slice(0, 255) || "file";
-  const dot = safeName.lastIndexOf(".");
-
-  if (dot <= 0) {
-    return { name: safeName, originalName: safeName, extension: "" };
-  }
-
-  return {
-    name: safeName.slice(0, dot),
-    originalName: safeName,
-    extension: safeName.slice(dot + 1).toLowerCase(),
-  };
-}
+type TargetBody = { organizationId?: unknown; folderId?: unknown } | null;
+type UploadTarget = { organizationId: string | null; folderId: string | null };
+type TargetFailure = { status: 400 | 403; message: string };
 
 async function userCanUseOrganization(
   userId: string,
@@ -83,6 +71,34 @@ async function resolveFolderId(input: {
   return folder ? { folderId: raw } : { error: "Folder not found" };
 }
 
+/** Validates the org and folder target shared by presign and complete. */
+async function resolveTarget(
+  userId: string,
+  body: TargetBody,
+): Promise<UploadTarget | TargetFailure> {
+  const rawOrganizationId = body?.organizationId ?? null;
+
+  if (rawOrganizationId !== null && typeof rawOrganizationId !== "string") {
+    return { status: 400, message: "Invalid organization" };
+  }
+
+  const organizationId = rawOrganizationId?.trim() || null;
+
+  if (!(await userCanUseOrganization(userId, organizationId))) {
+    return { status: 403, message: "Organization access denied" };
+  }
+
+  const folder = await resolveFolderId({
+    userId,
+    rawFolderId: body?.folderId,
+    organizationId,
+  });
+
+  if ("error" in folder) return { status: 400, message: folder.error };
+
+  return { organizationId, folderId: folder.folderId };
+}
+
 function storageScope(userId: string, organizationId: string | null): string {
   return organizationId
     ? `organizations/${organizationId}/`
@@ -107,14 +123,7 @@ export default async function uploadRoute(fastify: FastifyInstance) {
     }
 
     const body = request.body as PresignBody | null;
-    const rawOrganizationId = body?.organizationId ?? null;
     const files = body?.files;
-
-    if (rawOrganizationId !== null && typeof rawOrganizationId !== "string") {
-      return reply.code(400).send({ message: "Invalid organization" });
-    }
-
-    const organizationId = rawOrganizationId?.trim() || null;
 
     if (!Array.isArray(files) || files.length === 0) {
       return reply.code(400).send({ message: "No files provided" });
@@ -139,27 +148,20 @@ export default async function uploadRoute(fastify: FastifyInstance) {
       }
     }
 
-    if (!(await userCanUseOrganization(userId, organizationId))) {
-      return reply.code(403).send({ message: "Organization access denied" });
+    const target = await resolveTarget(userId, body);
+
+    if ("message" in target) {
+      return reply.code(target.status).send({ message: target.message });
     }
 
-    const folder = await resolveFolderId({
-      userId,
-      rawFolderId: body?.folderId,
-      organizationId,
-    });
-
-    if ("error" in folder) {
-      return reply.code(400).send({ message: folder.error });
-    }
-
+    const { organizationId, folderId } = target;
     const presigned = await Promise.all(
       files.map(async (file) => {
         const contentType = file.mimeType || DEFAULT_MIME_TYPE;
         const key = createStorageKey({
           userId,
           organizationId,
-          folderId: folder.folderId,
+          folderId,
           fileName: file.name,
         });
         const result = await getPresignedUploadUrl({ key, contentType });
@@ -183,14 +185,7 @@ export default async function uploadRoute(fastify: FastifyInstance) {
     }
 
     const body = request.body as CompleteBody | null;
-    const rawOrganizationId = body?.organizationId ?? null;
     const files = body?.files;
-
-    if (rawOrganizationId !== null && typeof rawOrganizationId !== "string") {
-      return reply.code(400).send({ message: "Invalid organization" });
-    }
-
-    const organizationId = rawOrganizationId?.trim() || null;
 
     if (!Array.isArray(files) || files.length === 0) {
       return reply.code(400).send({ message: "No files provided" });
@@ -202,20 +197,13 @@ export default async function uploadRoute(fastify: FastifyInstance) {
         .send({ message: `Complete at most ${MAX_FILES} files at a time` });
     }
 
-    if (!(await userCanUseOrganization(userId, organizationId))) {
-      return reply.code(403).send({ message: "Organization access denied" });
+    const target = await resolveTarget(userId, body);
+
+    if ("message" in target) {
+      return reply.code(target.status).send({ message: target.message });
     }
 
-    const folder = await resolveFolderId({
-      userId,
-      rawFolderId: body?.folderId,
-      organizationId,
-    });
-
-    if ("error" in folder) {
-      return reply.code(400).send({ message: folder.error });
-    }
-
+    const { organizationId, folderId } = target;
     const scope = storageScope(userId, organizationId);
     const keys = new Set<string>();
 
@@ -251,16 +239,12 @@ export default async function uploadRoute(fastify: FastifyInstance) {
         return reply.code(400).send({ message: `${file.name} is invalid` });
       }
 
-      const { name, originalName, extension } = splitFileName(file.name);
-
       rows.push({
         userId,
         organizationId,
-        folderId: folder.folderId,
+        folderId,
         storageKey: file.key,
-        name,
-        originalName,
-        extension,
+        originalName: file.name.trim().slice(0, 255) || "file",
         size: metadata.size,
         mimeType: metadata.contentType || file.mimeType || DEFAULT_MIME_TYPE,
       });

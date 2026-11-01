@@ -1,9 +1,16 @@
 import {
+  AbortMultipartUploadCommand,
+  BucketAlreadyOwnedByYou,
+  CompleteMultipartUploadCommand,
+  CreateBucketCommand,
+  CreateMultipartUploadCommand,
+  PutBucketCorsCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
   PutObjectCommand,
+  UploadPartCommand,
 } from "@aws-sdk/client-s3";
 import { Upload, type BodyDataTypes } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -41,6 +48,7 @@ export type PresignedUrlResult = {
 export type PresignedUploadInput = {
   key: string;
   contentType?: string;
+  checksumSha256?: string;
   expiresIn?: number;
 };
 
@@ -54,18 +62,26 @@ export type ObjectMetadata = {
   size: number;
   contentType?: string;
   etag?: string;
+  checksumSha256?: string;
 };
+
+export type UploadedPart = { partNumber: number; etag: string };
 
 /** Stored object details. Throws if the object does not exist. */
 export async function getObjectMetadata(key: string): Promise<ObjectMetadata> {
   const result = await s3Client.send(
-    new HeadObjectCommand({ Bucket: bucketName, Key: key }),
+    new HeadObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      ChecksumMode: "ENABLED",
+    }),
   );
 
   return {
     size: result.ContentLength ?? 0,
     contentType: result.ContentType,
     etag: result.ETag,
+    checksumSha256: result.ChecksumSHA256,
   };
 }
 
@@ -73,6 +89,33 @@ export async function getObjectMetadata(key: string): Promise<ObjectMetadata> {
 export async function deleteStoredObject(key: string): Promise<void> {
   await s3Client.send(
     new DeleteObjectCommand({ Bucket: bucketName, Key: key }),
+  );
+}
+
+/** Dev and test helper: creates the configured bucket if it does not exist yet. */
+export async function ensureBucket(): Promise<void> {
+  await s3Client.send(new CreateBucketCommand({ Bucket: bucketName })).catch((error: unknown) => {
+    if (!(error instanceof BucketAlreadyOwnedByYou)) throw error;
+  });
+}
+
+/** Lets the browser PUT parts and read ETag, which multipart commits need. Run once per deploy. */
+export async function applyBucketCors(allowedOrigin: string): Promise<void> {
+  await s3Client.send(
+    new PutBucketCorsCommand({
+      Bucket: bucketName,
+      CORSConfiguration: {
+        CORSRules: [
+          {
+            AllowedOrigins: [allowedOrigin],
+            AllowedMethods: ["GET", "PUT", "HEAD"],
+            AllowedHeaders: ["*"],
+            ExposeHeaders: ["ETag"],
+            MaxAgeSeconds: 3600,
+          },
+        ],
+      },
+    }),
   );
 }
 
@@ -133,19 +176,92 @@ export async function getPresignedUploadUrl(
       Bucket: bucketName,
       Key: input.key,
       ContentType: input.contentType,
+      ChecksumSHA256: input.checksumSha256,
     }),
     { expiresIn },
   );
+  const headers: Record<string, string> = {};
+
+  if (input.contentType) headers["Content-Type"] = input.contentType;
+  if (input.checksumSha256) headers["x-amz-checksum-sha256"] = input.checksumSha256;
 
   return {
     url,
     method: "PUT",
     key: input.key,
     expiresIn,
-    headers: input.contentType
-      ? { "Content-Type": input.contentType }
-      : undefined,
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
   };
+}
+
+export async function createMultipartUpload(input: {
+  key: string;
+  contentType?: string;
+}): Promise<string> {
+  const result = await s3Client.send(
+    new CreateMultipartUploadCommand({
+      Bucket: bucketName,
+      Key: input.key,
+      ContentType: input.contentType,
+    }),
+  );
+
+  if (!result.UploadId) throw new Error("Multipart upload returned no id");
+
+  return result.UploadId;
+}
+
+/** Presigned PUT for one part. Parts can be re-requested until the session closes. */
+export async function getPresignedPartUrl(input: {
+  key: string;
+  uploadId: string;
+  partNumber: number;
+  expiresIn?: number;
+}): Promise<string> {
+  return getSignedUrl(
+    s3Client,
+    new UploadPartCommand({
+      Bucket: bucketName,
+      Key: input.key,
+      UploadId: input.uploadId,
+      PartNumber: input.partNumber,
+    }),
+    { expiresIn: resolveExpiry(input.expiresIn ?? 900) },
+  );
+}
+
+export async function completeMultipartUpload(input: {
+  key: string;
+  uploadId: string;
+  parts: UploadedPart[];
+}): Promise<void> {
+  await s3Client.send(
+    new CompleteMultipartUploadCommand({
+      Bucket: bucketName,
+      Key: input.key,
+      UploadId: input.uploadId,
+      MultipartUpload: {
+        Parts: input.parts.map((part) => ({
+          PartNumber: part.partNumber,
+          ETag: part.etag,
+        })),
+      },
+    }),
+  );
+}
+
+/** Drops an unfinished multipart upload and its stored parts. */
+export async function abortMultipartUpload(input: {
+  key: string;
+  uploadId: string;
+}): Promise<void> {
+  await s3Client.send(
+    new AbortMultipartUploadCommand({
+      Bucket: bucketName,
+      Key: input.key,
+      UploadId: input.uploadId,
+    }),
+  );
 }
 
 /** Short-lived URL for direct browser/API download. */

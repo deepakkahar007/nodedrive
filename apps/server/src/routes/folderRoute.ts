@@ -41,9 +41,13 @@ export default async function folderRoute(fastify: FastifyInstance) {
         }
       }
 
-      const folder = await createFolder({ userId, name, parentId });
+      const result = await createFolder({ userId, name, parentId });
 
-      return reply.code(201).send({ folder });
+      if ("error" in result) {
+        return reply.code(409).send({ message: "A folder with that name already exists" });
+      }
+
+      return reply.code(201).send({ folder: result.folder });
     },
   );
 }
